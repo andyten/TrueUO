@@ -21,6 +21,7 @@
   
   <PropertyGroup>
     <DefineConstants>NEWTIMERS;TrueUO</DefineConstants>
+    <Optimize>true</Optimize>
   </PropertyGroup>
 
   <ItemGroup>
