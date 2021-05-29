@@ -26,5 +26,5 @@ dotnet build -c Release
 
 @ECHO OFF
 
-"%CURPATH%%EXENAME%.exe"
+
 
