@@ -61,4 +61,3 @@ IF "%~2" == "" (
 echo dotnet publish %c% %r% --no-restore --self-contained=false -o Distribution Application/ServUO.csproj
 dotnet publish %c% %r% --no-restore --self-contained=false -o Distribution Application/ServUO.csproj
 
-"%CURPATH%%EXENAME%.exe"
