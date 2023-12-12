@@ -56,7 +56,7 @@ namespace Server.Items
                 Charges--;
 
                 m_Table[from] = m_Ward;
-                Timer.DelayCall(TimeSpan.FromSeconds(10.0), new TimerStateCallback(RemoveEffects), from);
+                Timer.DelayCall(TimeSpan.FromSeconds(10.0), RemoveEffects, from);
 
                 from.FixedParticles(14154, 1, 30, 9964, 3, 3, EffectLayer.Waist);
 
@@ -95,7 +95,7 @@ namespace Server.Items
                     break;
             }
 
-            list.Add(1060639, "{0}\t{1}", HitPoints, MaxHitPoints); // durability ~1_val~ / ~2_val~
+            list.Add(1060639, $"{HitPoints}\t{MaxHitPoints}"); // durability ~1_val~ / ~2_val~
         }
 
         public static bool IsUnderEffects(Mobile from, WardingEffect type)
@@ -107,8 +107,7 @@ namespace Server.Items
         {
             Mobile from = (Mobile)obj;
 
-            if (m_Table.ContainsKey(from))
-                m_Table.Remove(from);
+            m_Table.Remove(from);
 
             from.SendLocalizedMessage(1116244); //The magical ward around you dissipates.
 

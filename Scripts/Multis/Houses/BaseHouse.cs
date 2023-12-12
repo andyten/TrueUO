@@ -320,7 +320,7 @@ namespace Server.Multis
         {
             typeof(Engines.Plants.SeedBox), typeof(GardenShedAddon),
             typeof(GardenShedBarrel),       typeof(BaseSpecialScrollBook),
-            typeof(JewelryBox)
+            typeof(JewelryBox), typeof(EnchantedSoulstoneVessel)
         };
 
         private readonly Type[] _NoDecayItems =
@@ -328,7 +328,7 @@ namespace Server.Multis
             typeof(BaseBoard),              typeof(Aquarium),
             typeof(FishBowl),               typeof(BaseSpecialScrollBook),
             typeof(Engines.Plants.SeedBox), typeof(JewelryBox),
-            typeof(FermentationBarrel)
+            typeof(FermentationBarrel), typeof(EnchantedSoulstoneVessel)
         };
 
         // Not Included Storage
@@ -1219,16 +1219,6 @@ namespace Server.Multis
             return FindHouseAt(e.Location, e.Map, 16);
         }
 
-        public static BaseHouse FindHouseAt(IPoint3D p, Map map)
-        {
-            if (p == null)
-            {
-                return null;
-            }
-
-            return FindHouseAt(new Point3D(p), map, 16);
-        }
-
         public static BaseHouse FindHouseAt(Point3D loc, Map map, int height)
         {
             if (map == null || map == Map.Internal)
@@ -1337,12 +1327,6 @@ namespace Server.Multis
         {
             typeof(PotionKeg)
         };
-
-        public virtual bool IsStairArea(IPoint3D p)
-        {
-            bool frontStairs;
-            return IsStairArea(p, out frontStairs);
-        }
 
         public virtual bool IsStairArea(IPoint3D p, out bool frontStairs)
         {
@@ -1620,107 +1604,6 @@ namespace Server.Multis
             AddDoor(door, x, y, z);
 
             return door;
-        }
-
-        public BaseDoor AddEastDoor(int x, int y, int z, uint k)
-        {
-            return AddEastDoor(true, x, y, z, k);
-        }
-
-        public BaseDoor AddEastDoor(bool wood, int x, int y, int z, uint k)
-        {
-            BaseDoor door = MakeDoor(wood, DoorFacing.SouthCW);
-
-            door.KeyValue = k;
-            AddDoor(door, x, y, z);
-
-            return door;
-        }
-
-        public BaseDoor AddSouthDoor(int x, int y, int z, uint k)
-        {
-            return AddSouthDoor(true, x, y, z, k);
-        }
-
-        public BaseDoor AddSouthDoor(bool wood, int x, int y, int z, uint k)
-        {
-            BaseDoor door = MakeDoor(wood, DoorFacing.WestCW);
-
-            door.KeyValue = k;
-            AddDoor(door, x, y, z);
-
-            return door;
-        }
-
-        public BaseDoor[] AddSouthDoors(int x, int y, int z, uint k)
-        {
-            return AddSouthDoors(true, x, y, z, k);
-        }
-
-        public BaseDoor[] AddSouthDoors(bool wood, int x, int y, int z, uint k)
-        {
-            BaseDoor westDoor = MakeDoor(wood, DoorFacing.WestCW);
-            BaseDoor eastDoor = MakeDoor(wood, DoorFacing.EastCCW);
-
-            westDoor.KeyValue = k;
-            eastDoor.KeyValue = k;
-
-            westDoor.Link = eastDoor;
-            eastDoor.Link = westDoor;
-
-            AddDoor(westDoor, x, y, z);
-            AddDoor(eastDoor, x + 1, y, z);
-
-            return new BaseDoor[2] { westDoor, eastDoor };
-        }
-
-        public BaseDoor[] AddEastDoors(int x, int y, int z, uint k)
-        {
-            return AddEastDoors(true, x, y, z, k, false);
-        }
-
-        public BaseDoor[] AddEastDoors(bool wood, int x, int y, int z, uint k)
-        {
-            return AddEastDoors(wood, x, y, z, k, false, false);
-        }
-
-        public BaseDoor[] AddEastDoors(bool wood, int x, int y, int z, uint k, bool invert)
-        {
-            return AddEastDoors(wood, x, y, z, k, invert, false);
-        }
-
-        public BaseDoor[] AddEastDoors(bool wood, int x, int y, int z)
-        {
-            return AddEastDoors(wood, x, y, z, 0, false, false);
-        }
-
-        public BaseDoor[] AddEastDoors(bool wood, int x, int y, int z, bool invert, bool altopen)
-        {
-            return AddEastDoors(wood, x, y, z, 0, invert, altopen);
-        }
-
-        public BaseDoor[] AddEastDoors(bool wood, int x, int y, int z, uint k, bool invert, bool altopen)
-        {
-            BaseDoor northDoor = MakeDoor(wood, invert ? DoorFacing.SouthCCW : altopen ? DoorFacing.NorthCCW : DoorFacing.NorthCW);
-            BaseDoor southDoor = MakeDoor(wood, invert ? DoorFacing.NorthCW : altopen ? DoorFacing.SouthCW : DoorFacing.SouthCCW);
-
-            northDoor.KeyValue = k;
-            southDoor.KeyValue = k;
-
-            northDoor.Link = southDoor;
-            southDoor.Link = northDoor;
-
-            AddDoor(northDoor, x, y, z);
-            AddDoor(southDoor, x, y + 1, z);
-
-            return new BaseDoor[2] { northDoor, southDoor };
-        }
-
-        protected void ConvertDoor(BaseDoor door, int closedID, bool invert)
-        {
-            door.ItemID = closedID;
-            door.ClosedID = closedID;
-            door.OpenedID = closedID + 1;
         }
 
         protected BaseDoor AddDoor(int itemID, int xOffset, int yOffset, int zOffset)
@@ -2043,11 +1926,6 @@ namespace Server.Multis
             Sign.MoveToWorld(new Point3D(X + xoff, Y + yoff, Z + zoff), Map);
         }
 
-        public void SetLockdown(Item i, bool locked)
-        {
-            SetLockdown(null, i, locked);
-        }
-
         public void SetLockdown(Mobile m, Item i, bool locked)
         {
             if (LockDowns == null || locked && LockDowns.ContainsKey(i) || !locked && !LockDowns.ContainsKey(i))
@@ -2220,7 +2098,7 @@ namespace Server.Multis
                 bool valid = m_House != null && Sextant.Format(m_House.Location, m_House.Map, ref xLong, ref yLat, ref xMins, ref yMins, ref xEast, ref ySouth);
 
                 if (valid)
-                    location = string.Format("{0}° {1}'{2}, {3}° {4}'{5}", yLat, yMins, ySouth ? "S" : "N", xLong, xMins, xEast ? "E" : "W");
+                    location = $"{yLat}° {yMins}'{(ySouth ? "S" : "N")}, {xLong}° {xMins}'{(xEast ? "E" : "W")}";
                 else
                     location = "unknown";
 
@@ -2486,8 +2364,7 @@ namespace Server.Multis
                 {
                     string name = Sign == null || Sign.Name == null ? "An Unnamed House" : Sign.Name;
 
-                    NewMaginciaMessage message = new NewMaginciaMessage(null, new TextDefinition(1154338),
-                        string.Format("{0}\t{1}", vendor.ShopName, name));
+                    NewMaginciaMessage message = new NewMaginciaMessage(null, new TextDefinition(1154338), $"{vendor.ShopName}\t{name}");
                     /* Your rental vendor named ~1_VENDOR~ located in house: ~2_HOUSE~ is in danger of deletion. 
                     * This house has been condemned and you should remove everything on your vendor AS SOON AS 
                     * POSSIBLE or risk possible deletion.*/
@@ -2655,10 +2532,7 @@ namespace Server.Multis
 
                     Secures.Add(info);
 
-                    if (LockDowns.ContainsKey(item))
-                    {
-                        LockDowns.Remove(item);
-                    }
+                    LockDowns.Remove(item);
 
                     item.Movable = false;
 
@@ -2673,10 +2547,7 @@ namespace Server.Multis
 
                         Secures.Add(info2);
 
-                        if (LockDowns.ContainsKey(ad))
-                        {
-                            LockDowns.Remove(ad);
-                        }
+                        LockDowns.Remove(ad);
 
                         ad.Movable = false;
                     }
@@ -2742,23 +2613,6 @@ namespace Server.Multis
             }
 
             return false;
-        }
-
-        public SecureLevel GetSecureAccess(Mobile m)
-        {
-            if (IsOwner(m) || m.AccessLevel > AccessLevel.Player)
-                return SecureLevel.Owner;
-
-            if (IsCoOwner(m))
-                return SecureLevel.CoOwners;
-
-            if (IsFriend(m))
-                return SecureLevel.Friends;
-
-            if (IsGuildMember(m))
-                return SecureLevel.Guild;
-
-            return SecureLevel.Anyone;
         }
 
         public SecureInfo GetSecureInfoFor(Item item)
@@ -3756,58 +3610,6 @@ namespace Server.Multis
             return count;
         }
 
-        public int LockDownCount
-        {
-            get
-            {
-                int count = 0;
-
-                count += GetLockdowns();
-
-                if (Secures != null)
-                {
-                    for (int i = 0; i < Secures.Count; ++i)
-                    {
-                        SecureInfo info = Secures[i];
-
-                        if (info.Item.Deleted)
-                            continue;
-
-                        if (info.Item is StrongBox)
-                            count += 1;
-                        else
-                            count += 125;
-                    }
-                }
-
-                return count;
-            }
-        }
-
-        public int SecureCount
-        {
-            get
-            {
-                int count = 0;
-
-                if (Secures != null)
-                {
-                    for (int i = 0; i < Secures.Count; i++)
-                    {
-                        SecureInfo info = Secures[i];
-
-                        if (info.Item.Deleted)
-                            continue;
-
-                        if (!(info.Item is StrongBox))
-                            count += 1;
-                    }
-                }
-
-                return count;
-            }
-        }
-
         public List<Item> Carpets { get; set; }
 
         public Dictionary<Item, Mobile> Addons { get; set; }
@@ -3870,16 +3672,6 @@ namespace Server.Multis
                     for (int y = m_StartY; y <= m_EndY; ++y)
                         m_Map.FixColumn(x, y);
             }
-        }
-
-        public DateTime LastVisit(Mobile m)
-        {
-            if (Visits.ContainsKey(m))
-            {
-                return Visits[m];
-            }
-
-            return DateTime.MinValue;
         }
 
         public void AddVisit(Mobile m)

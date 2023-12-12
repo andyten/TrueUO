@@ -260,10 +260,7 @@ namespace Server.Engines.NewMagincia
             {
                 Mobile m = toRemove[index];
 
-                if (m_WarehouseStorage.ContainsKey(m))
-                {
-                    m_WarehouseStorage.Remove(m);
-                }
+                m_WarehouseStorage.Remove(m);
             }
 
             ColUtility.Free(toRemove);
@@ -413,8 +410,11 @@ namespace Server.Engines.NewMagincia
 
         public static int GetNextAvailableBid(Mobile from)
         {
-            if (m_NextAvailable.ContainsKey(from))
-                return m_NextAvailable[from].Amount;
+            if (m_NextAvailable.TryGetValue(from, out BidEntry value))
+            {
+                return value.Amount;
+            }
+
             return 0;
         }
 
@@ -425,16 +425,14 @@ namespace Server.Engines.NewMagincia
 
         public static void RemoveBidNextAvailable(Mobile from)
         {
-            if (m_NextAvailable.ContainsKey(from))
-                m_NextAvailable.Remove(from);
+            m_NextAvailable.Remove(from);
         }
 
         public static void AwardPlot(MaginciaPlotAuction auction, Mobile winner, int highest)
         {
             MaginciaBazaarPlot plot = auction.Plot;
 
-            if (m_NextAvailable.ContainsKey(winner))
-                m_NextAvailable.Remove(winner);
+            m_NextAvailable.Remove(winner);
 
             if (plot != null && plot.Owner != winner)
             {
@@ -551,17 +549,17 @@ namespace Server.Engines.NewMagincia
 
         public static StorageEntry GetStorageEntry(Mobile from)
         {
-            if (m_WarehouseStorage.ContainsKey(from))
-                return m_WarehouseStorage[from];
+            if (m_WarehouseStorage.TryGetValue(from, out StorageEntry value))
+            {
+                return value;
+            }
+
             return null;
         }
 
         public static void RemoveFromStorage(Mobile from)
         {
-            if (m_WarehouseStorage.ContainsKey(from))
-            {
-                m_WarehouseStorage.Remove(from);
-            }
+            m_WarehouseStorage.Remove(from);
         }
 
         public static void AddToReserve(Mobile from, int amount)

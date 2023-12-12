@@ -1,45 +1,43 @@
-#region References
 using System;
 using System.IO;
-#endregion
 
 namespace Server
 {
 	public static class Persistence
     {
         public static void SerializeBlock(GenericWriter writer, Action<GenericWriter> serializer)
-        {
-            byte[] data = Array.Empty<byte>();
+		{
+			byte[] data = Array.Empty<byte>();
 
-            if (serializer != null)
-            {
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    BinaryFileWriter w = new BinaryFileWriter(ms, true);
+			if (serializer != null)
+			{
+				using (MemoryStream ms = new MemoryStream())
+				{
+					BinaryFileWriter w = new BinaryFileWriter(ms, true);
 
-                    try
-                    {
-                        serializer(w);
+					try
+					{
+						serializer(w);
 
-                        w.Flush();
+						w.Flush();
 
-                        data = ms.ToArray();
-                    }
-                    finally
-                    {
-                        w.Close();
-                    }
-                }
-            }
+						data = ms.ToArray();
+					}
+					finally
+					{
+						w.Close();
+					}
+				}
+			}
 
-            writer.Write(0x0C0FFEE0);
-            writer.Write(data.Length);
+			writer.Write(0x0C0FFEE0);
+			writer.Write(data.Length);
 
-            for (int i = 0; i < data.Length; i++)
-            {
-                writer.Write(data[i]);
-            }
-        }
+			for (var i = 0; i < data.Length; i++)
+			{
+				writer.Write(data[i]);
+			}
+		}
 
         public static void DeserializeBlock(GenericReader reader, Action<GenericReader> deserializer)
         {
@@ -87,39 +85,31 @@ namespace Server
 			Serialize(new FileInfo(path), serializer);
 		}
 
-		public static void Serialize(FileInfo file, Action<GenericWriter> serializer)
-		{
-			file.Refresh();
+        public static void Serialize(FileInfo file, Action<GenericWriter> serializer)
+        {
+            // Ensure the directory exists (this is a no-op if it already exists).
+            file.Directory?.Create();
 
-			if (file.Directory != null && !file.Directory.Exists)
-			{
-				file.Directory.Create();
-			}
+            // Ensure the file exists (this is a no-op if it already exists).
+            using (file.Create()) { /* just creating the file */ }
 
-			if (!file.Exists)
-			{
-				file.Create().Close();
-			}
+            using (FileStream fs = file.OpenWrite())
+            {
+                BinaryFileWriter writer = new BinaryFileWriter(fs, true);
 
-			file.Refresh();
+                try
+                {
+                    serializer(writer);
+                }
+                finally
+                {
+                    writer.Flush();
+                    writer.Close();
+                }
+            }
+        }
 
-			using (FileStream fs = file.OpenWrite())
-			{
-				BinaryFileWriter writer = new BinaryFileWriter(fs, true);
-
-				try
-				{
-					serializer(writer);
-				}
-				finally
-				{
-					writer.Flush();
-					writer.Close();
-				}
-			}
-		}
-
-		public static void Deserialize(string path, Action<GenericReader> deserializer)
+        public static void Deserialize(string path, Action<GenericReader> deserializer)
 		{
 			Deserialize(path, deserializer, true);
 		}
@@ -175,14 +165,14 @@ namespace Server
 				{
 					if (file.Length > 0)
 					{
-						throw new Exception(string.Format("[Persistence]: {0}", eos));
+						throw new Exception($"[Persistence]: {eos}");
 					}
 				}
 				catch (Exception e)
 				{
 					Utility.WriteConsoleColor(ConsoleColor.Red, "[Persistence]: An error was encountered while loading a saved object");
 
-					throw new Exception(string.Format("[Persistence]: {0}", e));
+					throw new Exception($"[Persistence]: {e}");
 				}
 				finally
 				{

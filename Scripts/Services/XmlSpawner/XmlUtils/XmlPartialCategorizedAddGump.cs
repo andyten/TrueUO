@@ -216,15 +216,7 @@ namespace Server.Gumps
                         {
                             Type type = ((SearchEntry)m_SearchResults[index]).EntryType;
 
-                            if (m_Gump is XmlAddGump mXmlAddGump && type != null)
-                            {
-                                if (mXmlAddGump.defs?.NameList != null && m_EntryIndex >= 0 && m_EntryIndex < mXmlAddGump.defs.NameList.Length)
-                                {
-                                    mXmlAddGump.defs.NameList[m_EntryIndex] = type.Name;
-                                    XmlAddGump.Refresh(from, true);
-                                }
-                            }
-                            else if (m_Spawner != null && type != null)
+                            if (m_Spawner != null && type != null)
                             {
                                 XmlSpawnerGump xg = m_Spawner.SpawnerGump;
 
@@ -238,7 +230,7 @@ namespace Server.Gumps
                                         Color = 0x1436
                                     };
 
-                                    Timer.DelayCall(TimeSpan.Zero, new TimerStateCallback(XmlSpawnerGump.Refresh_Callback), new object[] { from });
+                                    Timer.DelayCall(TimeSpan.Zero, XmlSpawnerGump.Refresh_Callback, new object[] { from });
                                     //from.CloseGump(typeof(XmlSpawnerGump));
                                     //from.SendGump( new XmlSpawnerGump(xg.m_Spawner, xg.X, xg.Y, xg.m_ShowGump, xg.xoffset, xg.page, xg.Rentry) );
                                 }

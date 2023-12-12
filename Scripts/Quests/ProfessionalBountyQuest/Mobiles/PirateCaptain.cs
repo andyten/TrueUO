@@ -148,9 +148,9 @@ namespace Server.Mobiles
             string args;
 
             if (m_PirateName > 0)
-                args = string.Format("#{0}\t#{1}\t#{2}", m_Adjective, m_Noun, m_PirateName);
+                args = $"#{m_Adjective}\t#{m_Noun}\t#{m_PirateName}";
             else
-                args = string.Format("#{0}\t#{1}\t{2}", m_Adjective, m_Noun, Name);
+                args = $"#{m_Adjective}\t#{m_Noun}\t{Name}";
 
             list.Add(1116690, args);
         }
@@ -235,7 +235,7 @@ namespace Server.Mobiles
                 quest.Galleon.CapturedCaptain = this;
             }
 
-            Timer.DelayCall(TimeSpan.FromSeconds(2.5), new TimerStateCallback(MoveCaptainToShip), new object[] { x, y, pole });
+            Timer.DelayCall(TimeSpan.FromSeconds(2.5), MoveCaptainToShip, new object[] { x, y, pole });
         }
 
         private void MoveCaptainToShip(object obj)

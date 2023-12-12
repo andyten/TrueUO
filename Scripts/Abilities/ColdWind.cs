@@ -25,8 +25,10 @@ namespace Server.Items
 
             ExpireTimer timer = null;
 
-            if (m_Table.ContainsKey(defender))
-                timer = m_Table[defender];
+            if (m_Table.TryGetValue(defender, out ExpireTimer value))
+            {
+                timer = value;
+            }
 
             if (timer != null)
             {
@@ -52,7 +54,6 @@ namespace Server.Items
             {
                 m_Mobile = m;
                 m_From = from;
-                Priority = TimerPriority.TwoFiftyMS;
             }
 
             public void DoExpire()

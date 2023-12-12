@@ -320,9 +320,9 @@ namespace Server.Engines.CannedEvil
 
         public int GetMobileCurrentDamage(Mobile mobile)
         {
-            if (m_DamageEntries.ContainsKey(mobile))
+            if (m_DamageEntries.TryGetValue(mobile, out int value))
             {
-                return m_DamageEntries[mobile];
+                return value;
             }
             return 0;
         }
@@ -933,8 +933,8 @@ namespace Server.Engines.CannedEvil
             if (m_Active)
             {
                 list.Add(1060742); // active
-                list.Add(1060658, "Type\t{0}", m_Type); // ~1_val~: ~2_val~
-                list.Add(1060659, "Level\t{0}", Level); // ~1_val~: ~2_val~
+                list.Add(1060658, $"Type\t{m_Type}"); // ~1_val~: ~2_val~
+                list.Add(1060659, $"Level\t{Level}"); // ~1_val~: ~2_val~
                 list.Add(1060660, "Kills\t{0} of {1} ({2:F1}%)", m_Kills, MaxKills, 100.0 * ((double)m_Kills / MaxKills)); // ~1_val~: ~2_val~
                 //list.Add( 1060661, "Spawn Range\t{0}", m_SpawnRange ); // ~1_val~: ~2_val~
             }
@@ -1431,12 +1431,6 @@ namespace Server.Engines.CannedEvil
 
     public class ChampionSpawnRegion : BaseRegion
     {
-        public static void Initialize()
-        {
-            EventSink.Logout += OnLogout;
-            EventSink.Login += OnLogin;
-        }
-
         public override bool YoungProtected => false;
 
         private readonly ChampionSpawn m_Spawn;
@@ -1470,15 +1464,20 @@ namespace Server.Engines.CannedEvil
             return base.OnMoveInto(m, d, newLocation, oldLocation);
         }
 
-        public static void OnLogout(LogoutEventArgs e)
+        public static void OnLogout(Mobile m)
         {
-            Mobile m = e.Mobile;
-
             if (m is PlayerMobile && m.Region.IsPartOf<ChampionSpawnRegion>() && m.AccessLevel == AccessLevel.Player && m.Map == Map.Felucca)
             {
                 if (m.Alive && m.Backpack != null)
                 {
-                    List<Item> list = new List<Item>(m.Backpack.Items.Where(i => i.LootType == LootType.Cursed));
+                    List<Item> list = new List<Item>();
+                    foreach (Item i in m.Backpack.Items)
+                    {
+                        if (i.LootType == LootType.Cursed)
+                        {
+                            list.Add(i);
+                        }
+                    }
 
                     for (var index = 0; index < list.Count; index++)
                     {
@@ -1510,10 +1509,8 @@ namespace Server.Engines.CannedEvil
             }
         }
 
-        public static void OnLogin(LoginEventArgs e)
+        public static void OnLogin(Mobile m)
         {
-            Mobile m = e.Mobile;
-
             if (m is PlayerMobile && !m.Alive && (m.Corpse == null || m.Corpse.Deleted) && m.Region.IsPartOf<ChampionSpawnRegion>() && m.Map == Map.Felucca)
             {
                 Map map = m.Map;

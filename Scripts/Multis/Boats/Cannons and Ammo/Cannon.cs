@@ -239,7 +239,7 @@ namespace Server.Items
             DoAreaMessage(1116080, 10, from);
             AddAction(from, 1149683); //The fuse is lit!
             Effects.PlaySound(Location, Map, 0x666);
-            Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(Shoot), from);
+            Timer.DelayCall(TimeSpan.FromSeconds(2), Shoot, from);
         }
 
         public bool CheckRegion(Mobile from)
@@ -353,12 +353,12 @@ namespace Server.Items
 
                                 if (toHit is Mobile)
                                 {
-                                    Timer.DelayCall(delay, new TimerStateCallback(OnMobileHit), new object[] { mobs, newPoint, ammo, shooter });
+                                    Timer.DelayCall(delay, OnMobileHit, new object[] { mobs, newPoint, ammo, shooter });
                                     hit = true;
                                 }
                                 else if (toHit is BaseGalleon galleon)
                                 {
-                                    Timer.DelayCall(delay, new TimerStateCallback(OnShipHit), new object[] { galleon, newPoint, ammo, shooter });
+                                    Timer.DelayCall(delay, OnShipHit, new object[] { galleon, newPoint, ammo, shooter });
                                     hit = true;
                                 }
                             }
@@ -387,7 +387,7 @@ namespace Server.Items
 
                             if (mobiles.Count > 0)
                             {
-                                Timer.DelayCall(delay, new TimerStateCallback(OnMobileHit), new object[] { mobiles, newPoint, ammo, shooter });
+                                Timer.DelayCall(delay, OnMobileHit, new object[] { mobiles, newPoint, ammo, shooter });
                                 hit = true;
                             }
                         }
@@ -774,7 +774,7 @@ namespace Server.Items
                 percRepaired = 100;
             }
 
-            from.SendLocalizedMessage(1116605, string.Format("{0}\t{1}", ((int)temp).ToString(), ((int)percRepaired).ToString())); //You make repairs to the cannon using ~1_METAL~ ingots. The cannon is now ~2_DMGPCT~% repaired.
+            from.SendLocalizedMessage(1116605, $"{(int)temp}\t{(int)percRepaired}"); //You make repairs to the cannon using ~1_METAL~ ingots. The cannon is now ~2_DMGPCT~% repaired.
         }
 
         public bool VerifyAmmo(Type type)
@@ -802,7 +802,7 @@ namespace Server.Items
             {
                 AddAction(from, 1149644); //Charging started.
                 DoAreaMessage(1116035, 10, from); //~1_NAME~ begins loading the cannon with a powder charge.
-                Timer.DelayCall(ActionTime, new TimerStateCallback(Charge), new object[] { from, typeof(PowderCharge) });
+                Timer.DelayCall(ActionTime, Charge, new object[] { from, typeof(PowderCharge) });
                 return true;
             }
             else
@@ -849,7 +849,7 @@ namespace Server.Items
             {
                 AddAction(from, 1149650); //Priming started
                 DoAreaMessage(1116038, 10, from); //~1_NAME~ begins priming the cannon with a cannon fuse.
-                Timer.DelayCall(ActionTime, new TimerStateCallback(Prime), new object[] { from, typeof(FuseCord) });
+                Timer.DelayCall(ActionTime, Prime, new object[] { from, typeof(FuseCord) });
                 return true;
             }
             else
@@ -863,7 +863,7 @@ namespace Server.Items
 
         public void DoLoad(Mobile from, Item ammo)
         {
-            Timer.DelayCall(ActionTime, new TimerStateCallback(Load), new object[] { from, ammo });
+            Timer.DelayCall(ActionTime, Load, new object[] { from, ammo });
 
             int cliloc = ammo is ICannonAmmo cannonAmmo && cannonAmmo.AmmoType == AmmunitionType.Cannonball ? 1116036 : 1116037;
 
@@ -1142,9 +1142,9 @@ namespace Server.Items
         {
             base.GetProperties(list);
 
-            list.Add(1116026, string.Format("#{0}", m_Charged ? 1116031 : 1116032)); //Charged: ~1_VALUE~
+            list.Add(1116026, $"#{(m_Charged ? 1116031 : 1116032)}"); //Charged: ~1_VALUE~
             list.Add(1116027, AmmoInfo.GetAmmoName(this).ToString()); //Ammo: ~1_VALUE~
-            list.Add(1116028, string.Format("#{0}", m_Primed ? 1116031 : 1116032)); //Primed: ~1_VALUE~
+            list.Add(1116028, $"#{(m_Primed ? 1116031 : 1116032)}"); //Primed: ~1_VALUE~
             list.Add(1116580 + (int)m_DamageState);
         }
 

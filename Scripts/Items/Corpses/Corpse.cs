@@ -404,7 +404,7 @@ namespace Server.Items
 
             if (!TimerRegistry.UpdateRegistry(m_TimerID, this, delay))
             {
-                TimerRegistry.Register(m_TimerID, this, delay, TimerPriority.FiveSeconds, c => c.DoDecay());
+                TimerRegistry.Register(m_TimerID, this, delay, c => c.DoDecay());
             }
         }
 
@@ -412,7 +412,7 @@ namespace Server.Items
         {
             m_DecayTime = DateTime.UtcNow + delay;
 
-            TimerRegistry.Register(m_TimerID, this, delay, TimerPriority.FiveSeconds, c => c.DoDecay());
+            TimerRegistry.Register(m_TimerID, this, delay, c => c.DoDecay());
         }
 
         private void DoDecay()
@@ -857,7 +857,6 @@ namespace Server.Items
             if (canLoot && !m_HasLooted.Contains(item))
             {
                 m_HasLooted.Add(item);
-                EventSink.InvokeCorpseLoot(new CorpseLootEventArgs(from, this, item));
             }
 
             return canLoot;

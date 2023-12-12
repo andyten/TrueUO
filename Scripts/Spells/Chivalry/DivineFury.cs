@@ -40,9 +40,9 @@ namespace Server.Spells.Chivalry
                 Caster.Stam = Caster.StamMax;
                 Timer t;
 
-                if (m_Table.ContainsKey(Caster))
+                if (m_Table.TryGetValue(Caster, out Timer value))
                 {
-                    t = m_Table[Caster];
+                    t = value;
 
                     t?.Stop();
                 }
@@ -55,7 +55,7 @@ namespace Server.Spells.Chivalry
                 else if (delay > 24)
                     delay = 24;
 
-                m_Table[Caster] = t = Timer.DelayCall(TimeSpan.FromSeconds(delay), new TimerStateCallback(Expire_Callback), Caster);
+                m_Table[Caster] = t = Timer.DelayCall(TimeSpan.FromSeconds(delay), Expire_Callback, Caster);
                 Caster.Delta(MobileDelta.WeaponDamage);
 
                 string args = $"{GetAttackBonus(Caster).ToString()}\t{GetDamageBonus(Caster).ToString()}\t{GetWeaponSpeedBonus(Caster).ToString()}\t{GetDefendMalus(Caster).ToString()}";
@@ -111,8 +111,7 @@ namespace Server.Spells.Chivalry
         {
             Mobile m = (Mobile)state;
 
-            if (m_Table.ContainsKey(m))
-                m_Table.Remove(m);
+            m_Table.Remove(m);
 
             m.Delta(MobileDelta.WeaponDamage);
             m.PlaySound(0xF8);

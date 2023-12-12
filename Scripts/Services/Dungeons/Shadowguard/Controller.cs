@@ -52,9 +52,6 @@ namespace Server.Engines.Shadowguard
 
         public static void Initialize()
         {
-            EventSink.Login += OnLogin;
-            EventSink.Disconnected += OnDisconnected;
-
             CommandSystem.Register("AddController", AccessLevel.Administrator, e =>
                 {
                     if (Instance == null)
@@ -83,9 +80,9 @@ namespace Server.Engines.Shadowguard
         {
             Instances = new List<ShadowguardInstance>();
 
-            for (int i = 0; i < CenterPoints.Length; i++)
+            for (int i = 0; i < _CenterPoints.Length; i++)
             {
-                Instances.Add(new ShadowguardInstance(this, CenterPoints[i], EncounterBounds[i], i));
+                Instances.Add(new ShadowguardInstance(this, _CenterPoints[i], _EncounterBounds[i], i));
             }
         }
 
@@ -133,9 +130,9 @@ namespace Server.Engines.Shadowguard
                 return;
             }
 
-            for (var index = 0; index < Encounters.Count; index++)
+            for (int index = 0; index < Encounters.Count; index++)
             {
-                var e = Encounters[index];
+                ShadowguardEncounter e = Encounters[index];
 
                 if (e != null)
                 {
@@ -169,10 +166,7 @@ namespace Server.Engines.Shadowguard
             if (Table == null)
                 return;
 
-            if (Table.ContainsKey(m))
-            {
-                Table.Remove(m);
-            }
+            Table.Remove(m);
 
             if (Table.Count == 0)
                 Table = null;
@@ -198,11 +192,13 @@ namespace Server.Engines.Shadowguard
         public void AddToTable(Mobile m, EncounterType encounter)
         {
             if (encounter == EncounterType.Roof)
-                return;
-
-            if (Table != null && Table.ContainsKey(m))
             {
-                if ((Table[m] & encounter) == 0)
+                return;
+            }
+
+            if (Table != null && Table.TryGetValue(m, out EncounterType value))
+            {
+                if ((value & encounter) == 0)
                 {
                     Table[m] |= encounter;
                 }
@@ -242,18 +238,18 @@ namespace Server.Engines.Shadowguard
             {
                 if (p != null)
                 {
-                    for (var index = 0; index < p.Members.Count; index++)
+                    for (int index = 0; index < p.Members.Count; index++)
                     {
                         PartyMemberInfo info = p.Members[index];
 
-                        if (Table == null || !Table.ContainsKey(info.Mobile) || (Table[info.Mobile] & EncounterType.Required) != EncounterType.Required)
+                        if (Table == null || !Table.TryGetValue(info.Mobile, out EncounterType value) || (value & EncounterType.Required) != EncounterType.Required)
                         {
                             m.SendLocalizedMessage(1156249); // All members of your party must complete each of the Shadowguard Towers before attempting the finale. 
                             return false;
                         }
                     }
                 }
-                else if (Table == null || !Table.ContainsKey(m) || (Table[m] & EncounterType.Required) != EncounterType.Required)
+                else if (Table == null || !Table.TryGetValue(m, out EncounterType value) || (value & EncounterType.Required) != EncounterType.Required)
                 {
                     m.SendLocalizedMessage(1156196); // You must complete each level of Shadowguard before attempting the Roof.
                     return false;
@@ -262,11 +258,11 @@ namespace Server.Engines.Shadowguard
 
             if (p != null)
             {
-                for (var index = 0; index < p.Members.Count; index++)
+                for (int index = 0; index < p.Members.Count; index++)
                 {
                     PartyMemberInfo info = p.Members[index];
 
-                    for (var i = 0; i < Encounters.Count; i++)
+                    for (int i = 0; i < Encounters.Count; i++)
                     {
                         ShadowguardEncounter enc = Encounters[i];
 
@@ -298,7 +294,7 @@ namespace Server.Engines.Shadowguard
                 }
             }
 
-            for (var index = 0; index < Encounters.Count; index++)
+            for (int index = 0; index < Encounters.Count; index++)
             {
                 ShadowguardEncounter instance = Encounters[index];
 
@@ -352,9 +348,9 @@ namespace Server.Engines.Shadowguard
                 {
                     instances = new List<ShadowguardInstance>();
 
-                    for (var index = 0; index < Instances.Count; index++)
+                    for (int index = 0; index < Instances.Count; index++)
                     {
-                        var e = Instances[index];
+                        ShadowguardInstance e = Instances[index];
 
                         if (e.IsRoof && !e.InUse)
                         {
@@ -366,9 +362,9 @@ namespace Server.Engines.Shadowguard
                 {
                     instances = new List<ShadowguardInstance>();
 
-                    for (var index = 0; index < Instances.Count; index++)
+                    for (int index = 0; index < Instances.Count; index++)
                     {
-                        var e = Instances[index];
+                        ShadowguardInstance e = Instances[index];
 
                         if (!e.IsRoof && !e.InUse)
                         {
@@ -390,9 +386,9 @@ namespace Server.Engines.Shadowguard
 
             if (type == EncounterType.Roof)
             {
-                for (var index = 0; index < Instances.Count; index++)
+                for (int index = 0; index < Instances.Count; index++)
                 {
-                    var e = Instances[index];
+                    ShadowguardInstance e = Instances[index];
 
                     if (e.IsRoof && !e.InUse)
                     {
@@ -403,9 +399,9 @@ namespace Server.Engines.Shadowguard
                 return null;
             }
 
-            for (var index = 0; index < Instances.Count; index++)
+            for (int index = 0; index < Instances.Count; index++)
             {
-                var e = Instances[index];
+                ShadowguardInstance e = Instances[index];
 
                 if (!e.IsRoof && !e.InUse)
                 {
@@ -422,13 +418,11 @@ namespace Server.Engines.Shadowguard
             {
                 if (encounter == EncounterType.Roof)
                 {
-                    m.SendLocalizedMessage(1156245);
-                    // You are currently already in the queue for the finale. You cannot join this queue unless you leave the other queue. Use the context menu option on the crystal ball to exit that queue.
+                    m.SendLocalizedMessage(1156245); // You are currently already in the queue for the finale. You cannot join this queue unless you leave the other queue. Use the context menu option on the crystal ball to exit that queue.
                 }
                 else
                 {
-                    m.SendLocalizedMessage(1156246);
-                    // You are currently already in the queue for one of the tower encounters. You cannot join this queue unless you leave the other queue. Use the context menu option on the crystal ball to exit that queue.
+                    m.SendLocalizedMessage(1156246); // You are currently already in the queue for one of the tower encounters. You cannot join this queue unless you leave the other queue. Use the context menu option on the crystal ball to exit that queue.
                 }
 
                 return;
@@ -438,7 +432,7 @@ namespace Server.Engines.Shadowguard
 
             List<Mobile> list = new List<Mobile>();
 
-            foreach (var key in Queue.Keys)
+            foreach (Mobile key in Queue.Keys)
             {
                 list.Add(key);
             }
@@ -493,7 +487,7 @@ namespace Server.Engines.Shadowguard
                     continue;
                 }
 
-                for (var index = 0; index < Encounters.Count; index++)
+                for (int index = 0; index < Encounters.Count; index++)
                 {
                     ShadowguardEncounter inst = Encounters[index];
 
@@ -514,12 +508,11 @@ namespace Server.Engines.Shadowguard
 
                     Timer.DelayCall(TimeSpan.FromMinutes(2), mobile =>
                     {
-                        if (Queue.ContainsKey(m))
+                        if (Queue.TryGetValue(m, out EncounterType value))
                         {
-                            EncounterType type = Queue[m];
-                            ShadowguardInstance instance = GetAvailableInstance(type);
+                            ShadowguardInstance instance = GetAvailableInstance(value);
 
-                            if (instance != null && instance.TryBeginEncounter(m, true, type))
+                            if (instance != null && instance.TryBeginEncounter(m, true, value))
                             {
                                 RemoveFromQueue(m);
                             }
@@ -540,9 +533,9 @@ namespace Server.Engines.Shadowguard
 
                     if (p != null)
                     {
-                        for (var index = 0; index < p.Members.Count; index++)
+                        for (int index = 0; index < p.Members.Count; index++)
                         {
-                            var info = p.Members[index];
+                            PartyMemberInfo info = p.Members[index];
 
                             info.Mobile.SendLocalizedMessage(1156190, i + 1 > 1 ? i.ToString() : "next");
                         }
@@ -557,7 +550,7 @@ namespace Server.Engines.Shadowguard
             }
         }
 
-        public static Rectangle2D[] EncounterBounds =
+        private static readonly Rectangle2D[] _EncounterBounds =
         {
             new Rectangle2D(70, 1990, 51, 51),
             new Rectangle2D(198, 1990, 51, 51),
@@ -582,7 +575,7 @@ namespace Server.Engines.Shadowguard
             new Rectangle2D(127, 2399, 64, 64)
         };
 
-        public static Point3D[] CenterPoints =
+        private static readonly Point3D[] _CenterPoints =
         {
             new Point3D(96, 2016, -20),  new Point3D(224, 2016, -20),  new Point3D(352, 2016, -20), new Point3D(480, 2016, -20),
             new Point3D(160, 2080, -20), new Point3D(288, 2080, -20),  new Point3D(416, 2080, -20),
@@ -620,9 +613,9 @@ namespace Server.Engines.Shadowguard
 
             if (Encounters != null)
             {
-                for (var index = 0; index < Encounters.Count; index++)
+                for (int index = 0; index < Encounters.Count; index++)
                 {
-                    var e = Encounters[index];
+                    ShadowguardEncounter e = Encounters[index];
 
                     e.Reset();
                 }
@@ -644,9 +637,9 @@ namespace Server.Engines.Shadowguard
 
             if (Instances != null)
             {
-                for (var index = 0; index < Instances.Count; index++)
+                for (int index = 0; index < Instances.Count; index++)
                 {
-                    var inst = Instances[index];
+                    ShadowguardInstance inst = Instances[index];
 
                     if (inst.Region != null)
                     {
@@ -689,9 +682,9 @@ namespace Server.Engines.Shadowguard
 
             writer.Write(Encounters.Count);
 
-            for (var index = 0; index < Encounters.Count; index++)
+            for (int index = 0; index < Encounters.Count; index++)
             {
-                var encounter = Encounters[index];
+                ShadowguardEncounter encounter = Encounters[index];
 
                 writer.Write((int) encounter.Encounter);
                 encounter.Serialize(writer);
@@ -710,9 +703,9 @@ namespace Server.Engines.Shadowguard
 
             writer.Write(Addons.Count);
 
-            for (var index = 0; index < Addons.Count; index++)
+            for (int index = 0; index < Addons.Count; index++)
             {
-                var addon = Addons[index];
+                BaseAddon addon = Addons[index];
 
                 writer.Write(addon);
             }
@@ -766,18 +759,18 @@ namespace Server.Engines.Shadowguard
             StartTimer();
         }
 
-        private static void OnDisconnected(DisconnectedEventArgs e)
+        public static void OnDisconnected(Mobile m)
         {
-            ShadowguardEncounter encounter = GetEncounter(e.Mobile.Location, e.Mobile.Map);
+            ShadowguardEncounter encounter = GetEncounter(m.Location, m.Map);
 
             if (encounter != null)
-                encounter.CheckPlayerStatus(e.Mobile);
+            {
+                encounter.CheckPlayerStatus(m);
+            }
         }
 
-        private static void OnLogin(LoginEventArgs e)
+        public static void OnLogin(Mobile m)
         {
-            Mobile m = e.Mobile;
-
             if (m.AccessLevel > AccessLevel.GameMaster)
                 return;
 
@@ -794,17 +787,12 @@ namespace Server.Engines.Shadowguard
                         ShadowguardEncounter.MovePlayer(mob, Instance.KickLocation, true);
                     }, m);
                 }
-                else if (m != encounter.PartyLeader)
+                else if (m != encounter.PartyLeader && m is PlayerMobile mobile && !encounter.Participants.Contains(mobile))
                 {
-                    Party p = Party.Get(encounter.PartyLeader);
-
-                    if (m is PlayerMobile mobile && !encounter.Participants.Contains(mobile))
+                    Timer.DelayCall(TimeSpan.FromSeconds(1), mob =>
                     {
-                        Timer.DelayCall(TimeSpan.FromSeconds(1), mob =>
-                        {
-                            ShadowguardEncounter.MovePlayer(mob, Instance.KickLocation, true);
-                        }, m);
-                    }
+                        ShadowguardEncounter.MovePlayer(mob, Instance.KickLocation, true);
+                    }, m);
                 }
             }
         }
@@ -940,7 +928,7 @@ namespace Server.Engines.Shadowguard
         public ShadowguardInstance Instance { get; }
 
         public ShadowguardRegion(Rectangle2D bounds, string regionName, ShadowguardInstance instance)
-            : base(string.Format("Shadowguard_{0}", regionName), Map.TerMur, DefaultPriority, bounds)
+            : base($"Shadowguard_{regionName}", Map.TerMur, DefaultPriority, bounds)
         {
             Instance = instance;
         }

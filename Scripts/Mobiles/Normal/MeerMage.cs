@@ -154,7 +154,7 @@ namespace Server.Mobiles
                 else if (combatant.Player)
                 {
                     Say(true, "I call a plague of insects to sting your flesh!");
-                    m_Table[combatant] = Timer.DelayCall(TimeSpan.FromSeconds(0.5), TimeSpan.FromSeconds(7.0), new TimerStateCallback(DoEffect), new object[] { combatant, 0 });
+                    m_Table[combatant] = Timer.DelayCall(TimeSpan.FromSeconds(0.5), TimeSpan.FromSeconds(7.0), DoEffect, new object[] { combatant, 0 });
                 }
             }
 
@@ -183,7 +183,7 @@ namespace Server.Mobiles
                     if (count % 4 == 0)
                     {
                         m.LocalOverheadMessage(Network.MessageType.Emote, m.SpeechHue, true, "* The swarm of insects bites and stings your flesh! *");
-                        m.NonlocalOverheadMessage(Network.MessageType.Emote, m.SpeechHue, true, string.Format("* {0} is stung by a swarm of insects *", m.Name));
+                        m.NonlocalOverheadMessage(Network.MessageType.Emote, m.SpeechHue, true, $"* {m.Name} is stung by a swarm of insects *");
                     }
 
                     m.FixedParticles(0x91C, 10, 180, 9539, EffectLayer.Waist);

@@ -30,17 +30,7 @@ namespace Server.Gumps
             }
             else
             {
-                if (gump is XmlAddGump xmladdgump)
-                {
-                    //Commands.Handle( from, String.Format( "{0}Add {1}", Commands.CommandPrefix, m_Type.Name ) );
-                    if (xmladdgump.defs?.NameList != null && index >= 0 && index < xmladdgump.defs.NameList.Length)
-                    {
-                        xmladdgump.defs.NameList[index] = m_Type.Name;
-                        XmlAddGump.Refresh(from, true);
-                    }
-                    from.SendGump(new XmlCategorizedAddGump(from, m_Parent, page, index, xmladdgump));
-                }
-                else if (gump is XmlSpawnerGump spawnerGump)
+                if (gump is XmlSpawnerGump spawnerGump)
                 {
                     XmlSpawner m_Spawner = spawnerGump.m_Spawner;
 
@@ -57,7 +47,7 @@ namespace Server.Gumps
                                 Color = 0x1436
                             };
 
-                            Timer.DelayCall(TimeSpan.Zero, new TimerStateCallback(XmlSpawnerGump.Refresh_Callback), new object[] { from });
+                            Timer.DelayCall(TimeSpan.Zero, XmlSpawnerGump.Refresh_Callback, new object[] { from });
                         }
                     }
                 }
@@ -256,15 +246,6 @@ namespace Server.Gumps
             m_Index = index;
             m_Gump = gump;
 
-            if (gump is XmlAddGump xmladdgump)
-            {
-                if (xmladdgump.defs != null)
-                {
-                    xmladdgump.defs.CurrentCategory = category;
-                    xmladdgump.defs.CurrentCategoryPage = page;
-                }
-            }
-
             Initialize(page);
         }
 
@@ -311,7 +292,7 @@ namespace Server.Gumps
             if (!OldStyle)
                 AddImageTiled(x - (OldStyle ? OffsetSize : 0), y, emptyWidth + (OldStyle ? OffsetSize * 2 : 0), EntryHeight, EntryGumpID);
 
-            AddHtml(x + TextOffsetX, y + ((EntryHeight - 20) / 2), emptyWidth - TextOffsetX, EntryHeight, string.Format("<center>{0}</center>", m_Category.Caption), false, false);
+            AddHtml(x + TextOffsetX, y + ((EntryHeight - 20) / 2), emptyWidth - TextOffsetX, EntryHeight, $"<center>{m_Category.Caption}</center>", false, false);
 
             x += emptyWidth + OffsetSize;
 

@@ -62,11 +62,11 @@ namespace Server.Items
             {
                 TenthAnniversarySculpture sculpture = m_sculptures[index];
 
-                if (sculpture.RewardCooldown != null && sculpture.RewardCooldown.ContainsKey(from))
+                if (sculpture.RewardCooldown != null && sculpture.RewardCooldown.TryGetValue(from, out DateTime value))
                 {
                     if (!donemessage)
                     {
-                        TimeSpan left = sculpture.RewardCooldown[from] - DateTime.UtcNow;
+                        TimeSpan left = value - DateTime.UtcNow;
 
                         if (left.TotalHours > 1)
                         {
@@ -101,7 +101,7 @@ namespace Server.Items
                 {
                     Mobile m = list[i];
 
-                    if (sculpture.RewardCooldown.ContainsKey(m) && sculpture.RewardCooldown[m] < DateTime.UtcNow)
+                    if (sculpture.RewardCooldown.TryGetValue(m, out DateTime value) && value < DateTime.UtcNow)
                     {
                         sculpture.RewardCooldown.Remove(m);
                     }
@@ -166,8 +166,7 @@ namespace Server.Items
 
         public static void RemoveSculpture(TenthAnniversarySculpture sculpture)
         {
-            if (m_sculptures.Contains(sculpture))
-                m_sculptures.Remove(sculpture);
+            m_sculptures.Remove(sculpture);
 
             if (m_sculptures.Count == 0 && m_Timer != null)
             {
@@ -198,11 +197,11 @@ namespace Server.Items
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
-            int version = reader.ReadInt();
+            reader.ReadInt();
+
             m_RewardCooldown = new Dictionary<Mobile, DateTime>();
 
             AddSculpture(this);
-
         }
     }
 }

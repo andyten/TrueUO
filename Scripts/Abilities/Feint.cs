@@ -51,7 +51,7 @@ namespace Server.Items
             t.Start();
             m_Registry[attacker] = t;
 
-            string args = string.Format("{0}\t{1}", defender.Name, bonus);
+            string args = $"{defender.Name}\t{bonus}";
             BuffInfo.AddBuff(attacker, new BuffInfo(BuffIcon.Feint, 1151308, 1151307, TimeSpan.FromSeconds(6), attacker, args));
 
             if (creature)
@@ -75,7 +75,6 @@ namespace Server.Items
                 m_Owner = owner;
                 m_Enemy = enemy;
                 m_DamageReduction = DamageReduction;
-                Priority = TimerPriority.FiftyMS;
             }
 
             protected override void OnTick()

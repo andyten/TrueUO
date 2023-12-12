@@ -25,15 +25,8 @@ namespace Server.Gumps
             BuildGump();
         }
 
-        public static void Initialize()
+        public static void OnPlayerDeath(Mobile m)
         {
-            EventSink.PlayerDeath += EventSink_PlayerDeath;
-        }
-
-        public static void EventSink_PlayerDeath(PlayerDeathEventArgs e)
-        {
-            Mobile m = e.Mobile;
-
             List<Mobile> killers = new List<Mobile>();
             List<Mobile> toGive = new List<Mobile>();
 
@@ -95,11 +88,6 @@ namespace Server.Gumps
 
                 Titles.AwardFame(g, fameAward, false);
                 Titles.AwardKarma(g, karmaAward, true);
-
-                if (killers.Contains(g))
-                {
-                    EventSink.InvokePlayerMurdered(new PlayerMurderedEventArgs(g, m));
-                }
             }
 
             if (m is PlayerMobile mobile && mobile.NpcGuild == NpcGuild.ThievesGuild)
@@ -120,10 +108,7 @@ namespace Server.Gumps
             PlayerMobile from = (PlayerMobile)states[0];
             Mobile killer = (Mobile)states[1];
 
-            if (from.RecentlyReported.Contains(killer))
-            {
-                from.RecentlyReported.Remove(killer);
-            }
+            from.RecentlyReported.Remove(killer);
         }
 
         public override void OnResponse(NetState state, RelayInfo info)
@@ -141,7 +126,7 @@ namespace Server.Gumps
                             killer.ShortTermMurders++;
 
                             ((PlayerMobile)from).RecentlyReported.Add(killer);
-                            Timer.DelayCall(TimeSpan.FromMinutes(10), new TimerStateCallback(ReportedListExpiry_Callback), new object[] { from, killer });
+                            Timer.DelayCall(TimeSpan.FromMinutes(10), ReportedListExpiry_Callback, new object[] { from, killer });
 
                             if (killer is PlayerMobile pk)
                             {

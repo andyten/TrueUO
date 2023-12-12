@@ -412,15 +412,15 @@ namespace Server.Items
 
             if (m_HookType > HookType.None && hookCliloc > 0)
             {
-                list.Add(1150885, string.Format("#{0}", hookCliloc)); //special hook: ~1_token~
-                list.Add(1150889, string.Format("#{0}", BaseFishingHook.GetCondition(m_HookUses))); //Hook condition: ~1_val~
+                list.Add(1150885, $"#{hookCliloc}"); //special hook: ~1_token~
+                list.Add(1150889, $"#{BaseFishingHook.GetCondition(m_HookUses)}"); //Hook condition: ~1_val~
             }
 
             if (m_BaitType != null)
             {
                 object label = FishInfo.GetFishLabel(m_BaitType);
                 if (label is int i)
-                    list.Add(1116468, string.Format("#{0}", i)); //baited to attract: ~1_val~
+                    list.Add(1116468, $"#{i}"); //baited to attract: ~1_val~
                 else if (label is string s)
                     list.Add(1116468, s);
             }
@@ -623,7 +623,7 @@ namespace Server.Items
                 {
                     case 0: Attributes.Luck += 40; break;
                     case 1: Attributes.Luck += 10; break;
-                    case 2: Attributes.RegenHits += attrInfo.OtherRegenHits; break;
+                    case 2: Attributes.RegenHits = attrInfo.OtherRegenHits; break;
                     case 3: Attributes.SpellChanneling = attrInfo.OtherSpellChanneling; break;
                     case 4: LowerStatReq = attrInfo.OtherLowerRequirements; break;
                 }

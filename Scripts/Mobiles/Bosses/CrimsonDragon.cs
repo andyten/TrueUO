@@ -112,7 +112,7 @@ namespace Server.Mobiles
                 m.Frozen = true;
                 m.SendLocalizedMessage(1080342, Name, 33); // Terror slices into your very being, destroying any chance of resisting ~1_name~ you might have had
 
-                Timer.DelayCall(TimeSpan.FromSeconds(5), new TimerStateCallback(Terrorize), m);
+                Timer.DelayCall(TimeSpan.FromSeconds(5), Terrorize, m);
             }
         }
 
@@ -129,7 +129,7 @@ namespace Server.Mobiles
                         Combatant = null;
                         pet.ControlMaster = null;
                         pet.Controlled = false;
-                        pet.Emote(string.Format("* {0} decided to go wild *", pet.Name));
+                        pet.Emote($"* {pet.Name} decided to go wild *");
                     }
 
                     if (pet.ControlMaster != null && 0.1 > Utility.RandomDouble())
@@ -137,7 +137,7 @@ namespace Server.Mobiles
                         Combatant = null;
                         pet.Combatant = pet.ControlMaster;
                         Combatant = null;
-                        pet.Emote(string.Format("* {0} is being angered *", pet.Name));
+                        pet.Emote($"* {pet.Name} is being angered *");
                     }
                 }
             }

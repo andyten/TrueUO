@@ -96,16 +96,11 @@ namespace Server.Items
             reader.ReadInt();
         }
 
-        public static void Initialize()
+        public static void OnLogin(Mobile m)
         {
-            EventSink.Login += OnLogin;
-        }
-
-        public static void OnLogin(LoginEventArgs e)
-        {
-            if (e.Mobile is PlayerMobile pm)
+            if (m is PlayerMobile pm)
             {
-                var medallion = CheckMedallion(pm);
+                IFellowshipMedallion medallion = CheckMedallion(pm);
 
                 if (medallion != null)
                 {
@@ -123,8 +118,6 @@ namespace Server.Items
             : base(TimeSpan.FromMinutes(12), TimeSpan.FromMinutes(12))
         {
             _Mobile = m;
-
-            Priority = TimerPriority.OneMinute;
         }
 
         protected override void OnTick()

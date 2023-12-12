@@ -100,8 +100,7 @@ namespace Server.Spells.Bushido
             if (m_RegenTable.TryGetValue(m, out t))
                 t.Stop();
 
-            if (m_RegenTable.ContainsKey(m))
-                m_RegenTable.Remove(m);
+            m_RegenTable.Remove(m);
 
             BuffInfo.RemoveBuff(m, BuffIcon.AnticipateHit);
         }
@@ -138,7 +137,6 @@ namespace Server.Spells.Bushido
                 : base(TimeSpan.FromSeconds(15.0))
             {
                 m_Mobile = m;
-                Priority = TimerPriority.TwoFiftyMS;
             }
 
             protected override void OnTick()
@@ -161,7 +159,6 @@ namespace Server.Spells.Bushido
             {
                 m_Mobile = m;
                 m_Hits = 15 + (m.Skills.Bushido.Fixed * m.Skills.Bushido.Fixed / 57600);
-                Priority = TimerPriority.TwoFiftyMS;
             }
 
             protected override void OnTick()

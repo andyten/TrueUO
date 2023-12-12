@@ -223,7 +223,7 @@ namespace Server.Engines.Quests
                         object label = FishInfo.GetFishLabel(bait.Index);
 
                         if (label is int i)
-                            from.SendLocalizedMessage(1149588, string.Format("#{0}\t", i)); //You receive bait to catch ~1_val~
+                            from.SendLocalizedMessage(1149588, $"#{i}\t"); //You receive bait to catch ~1_val~
                         else
                             from.SendLocalizedMessage(1149588, (string)label);      //You receive bait to catch ~1_val~
 
@@ -269,10 +269,7 @@ namespace Server.Engines.Quests
             List<FishMonger> mongers = new List<FishMonger>(m_Mongers);
 
             //First, remove quester
-            if (mongers.Contains(monger))
-            {
-                mongers.Remove(monger);
-            }
+            mongers.Remove(monger);
 
             //Next, remove mongers from other facets in same region as quest giver
             for (var index = 0; index < m_Mongers.Count; index++)

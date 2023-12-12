@@ -1,4 +1,3 @@
-#region References
 using Server.Engines.CityLoyalty;
 using Server.Mobiles;
 using Server.Network;
@@ -7,7 +6,6 @@ using Server.Regions;
 using System;
 using System.Collections.Generic;
 using System.Text;
-#endregion
 
 namespace Server.Items
 {
@@ -182,15 +180,15 @@ namespace Server.Items
 
             if (m_MapDest != null)
             {
-                list.Add(1060658, "Map\t{0}", m_MapDest);
+                list.Add(1060658, $"Map\t{m_MapDest}");
             }
 
             if (m_PointDest != Point3D.Zero)
             {
-                list.Add(1060659, "Coords\t{0}", m_PointDest);
+                list.Add(1060659, $"Coords\t{m_PointDest}");
             }
 
-            list.Add(1060660, "Creatures\t{0}", m_Creatures ? "Yes" : "No");
+            list.Add(1060660, $"Creatures\t{(m_Creatures ? "Yes" : "No")}");
         }
 
         public virtual bool CanTeleport(Mobile m)
@@ -336,7 +334,6 @@ namespace Server.Items
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-
             writer.Write(4); // version
 
             writer.Write(m_CriminalCheck);
@@ -357,45 +354,21 @@ namespace Server.Items
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
+            reader.ReadInt();
 
-            int version = reader.ReadInt();
+            m_CriminalCheck = reader.ReadBool();
+            m_CombatCheck = reader.ReadBool();
 
-            switch (version)
-            {
-                case 4:
-                    {
-                        m_CriminalCheck = reader.ReadBool();
-                        goto case 3;
-                    }
-                case 3:
-                    {
-                        m_CombatCheck = reader.ReadBool();
-                        goto case 2;
-                    }
-                case 2:
-                    {
-                        m_SourceEffect = reader.ReadBool();
-                        m_DestEffect = reader.ReadBool();
-                        m_Delay = reader.ReadTimeSpan();
-                        m_SoundID = reader.ReadEncodedInt();
+            m_SourceEffect = reader.ReadBool();
+            m_DestEffect = reader.ReadBool();
+            m_Delay = reader.ReadTimeSpan();
+            m_SoundID = reader.ReadEncodedInt();
 
-                        goto case 1;
-                    }
-                case 1:
-                    {
-                        m_Creatures = reader.ReadBool();
+            m_Creatures = reader.ReadBool();
 
-                        goto case 0;
-                    }
-                case 0:
-                    {
-                        m_Active = reader.ReadBool();
-                        m_PointDest = reader.ReadPoint3D();
-                        m_MapDest = reader.ReadMap();
-
-                        break;
-                    }
-            }
+            m_Active = reader.ReadBool();
+            m_PointDest = reader.ReadPoint3D();
+            m_MapDest = reader.ReadMap();
         }
     }
 
@@ -480,7 +453,7 @@ namespace Server.Items
                         m.Send(new MessageLocalized(Serial, ItemID, MessageType.Regular, 0x3B2, 3, m_MessageNumber, null, ""));
                     }
 
-                    Timer.DelayCall(TimeSpan.FromSeconds(5.0), new TimerStateCallback(EndMessageLock), m);
+                    Timer.DelayCall(TimeSpan.FromSeconds(5.0), EndMessageLock, m);
                 }
 
                 return false;
@@ -505,22 +478,21 @@ namespace Server.Items
                 skillName = "(Invalid)";
             }
 
-            list.Add(1060661, "{0}\t{1:F1}", skillName, m_Required);
+            list.Add(1060661, $"{skillName}\t{m_Required:F1}");
 
             if (m_MessageString != null)
             {
-                list.Add(1060662, "Message\t{0}", m_MessageString);
+                list.Add(1060662, $"Message\t{m_MessageString}");
             }
             else if (m_MessageNumber != 0)
             {
-                list.Add(1060662, "Message\t#{0}", m_MessageNumber);
+                list.Add(1060662, $"Message\t#{m_MessageNumber}");
             }
         }
 
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-
             writer.Write(0); // version
 
             writer.Write((int)m_Skill);
@@ -532,7 +504,6 @@ namespace Server.Items
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
-
             int version = reader.ReadInt();
 
             switch (version)
@@ -664,23 +635,22 @@ namespace Server.Items
         {
             base.GetProperties(list);
 
-            list.Add(1060661, "Range\t{0}", m_Range);
+            list.Add(1060661, $"Range\t{m_Range}");
 
             if (m_Keyword >= 0)
             {
-                list.Add(1060662, "Keyword\t{0}", m_Keyword);
+                list.Add(1060662, $"Keyword\t{m_Keyword}");
             }
 
             if (m_Substring != null)
             {
-                list.Add(1060663, "Substring\t{0}", m_Substring);
+                list.Add(1060663, $"Substring\t{m_Substring}");
             }
         }
 
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-
             writer.Write(0); // version
 
             writer.Write(m_Substring);
@@ -691,7 +661,6 @@ namespace Server.Items
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
-
             int version = reader.ReadInt();
 
             switch (version)
@@ -705,181 +674,6 @@ namespace Server.Items
                         break;
                     }
             }
-        }
-    }
-
-    public class WaitTeleporter : KeywordTeleporter
-    {
-        private static Dictionary<Mobile, TeleportingInfo> m_Table;
-        private int m_StartNumber;
-        private string m_StartMessage;
-        private int m_ProgressNumber;
-        private string m_ProgressMessage;
-        private bool m_ShowTimeRemaining;
-
-        [Constructable]
-        public WaitTeleporter()
-        { }
-
-        public WaitTeleporter(Serial serial)
-            : base(serial)
-        { }
-
-        [CommandProperty(AccessLevel.GameMaster)]
-        public int StartNumber { get => m_StartNumber; set => m_StartNumber = value; }
-
-        [CommandProperty(AccessLevel.GameMaster)]
-        public string StartMessage { get => m_StartMessage; set => m_StartMessage = value; }
-
-        [CommandProperty(AccessLevel.GameMaster)]
-        public int ProgressNumber { get => m_ProgressNumber; set => m_ProgressNumber = value; }
-
-        [CommandProperty(AccessLevel.GameMaster)]
-        public string ProgressMessage { get => m_ProgressMessage; set => m_ProgressMessage = value; }
-
-        [CommandProperty(AccessLevel.GameMaster)]
-        public bool ShowTimeRemaining { get => m_ShowTimeRemaining; set => m_ShowTimeRemaining = value; }
-
-        public static void Initialize()
-        {
-            m_Table = new Dictionary<Mobile, TeleportingInfo>();
-
-            EventSink.Logout += EventSink_Logout;
-        }
-
-        public static void EventSink_Logout(LogoutEventArgs e)
-        {
-            Mobile from = e.Mobile;
-            TeleportingInfo info;
-
-            if (from == null || !m_Table.TryGetValue(from, out info))
-            {
-                return;
-            }
-
-            info.Timer.Stop();
-            m_Table.Remove(from);
-        }
-
-        public static string FormatTime(TimeSpan ts)
-        {
-            if (ts.TotalHours >= 1)
-            {
-                int h = (int)Math.Round(ts.TotalHours);
-                return string.Format("{0} hour{1}", h, (h == 1) ? "" : "s");
-            }
-
-            if (ts.TotalMinutes >= 1)
-            {
-                int m = (int)Math.Round(ts.TotalMinutes);
-                return string.Format("{0} minute{1}", m, (m == 1) ? "" : "s");
-            }
-
-            int s = Math.Max((int)Math.Round(ts.TotalSeconds), 0);
-            return string.Format("{0} second{1}", s, (s == 1) ? "" : "s");
-        }
-
-        public override void StartTeleport(Mobile m)
-        {
-            TeleportingInfo info;
-
-            if (m_Table.TryGetValue(m, out info))
-            {
-                if (info.Teleporter == this)
-                {
-                    if (m.BeginAction(this))
-                    {
-                        if (m_ProgressMessage != null)
-                        {
-                            m.SendMessage(m_ProgressMessage);
-                        }
-                        else if (m_ProgressNumber != 0)
-                        {
-                            m.SendLocalizedMessage(m_ProgressNumber);
-                        }
-
-                        if (m_ShowTimeRemaining)
-                        {
-                            m.SendMessage("Time remaining: {0}", FormatTime(m_Table[m].Timer.Next - DateTime.UtcNow));
-                        }
-
-                        Timer.DelayCall(TimeSpan.FromSeconds(5), EndLock, m);
-                    }
-
-                    return;
-                }
-
-                info.Timer.Stop();
-            }
-
-            if (m_StartMessage != null)
-            {
-                m.SendMessage(m_StartMessage);
-            }
-            else if (m_StartNumber != 0)
-            {
-                m.SendLocalizedMessage(m_StartNumber);
-            }
-
-            if (Delay == TimeSpan.Zero)
-            {
-                DoTeleport(m);
-            }
-            else
-            {
-                m_Table[m] = new TeleportingInfo(this, Timer.DelayCall(Delay, DoTeleport, m));
-            }
-        }
-
-        public override void DoTeleport(Mobile m)
-        {
-            m_Table.Remove(m);
-
-            base.DoTeleport(m);
-        }
-
-        public override void Serialize(GenericWriter writer)
-        {
-            base.Serialize(writer);
-            writer.Write(0); // version
-
-            writer.Write(m_StartNumber);
-            writer.Write(m_StartMessage);
-            writer.Write(m_ProgressNumber);
-            writer.Write(m_ProgressMessage);
-            writer.Write(m_ShowTimeRemaining);
-        }
-
-        public override void Deserialize(GenericReader reader)
-        {
-            base.Deserialize(reader);
-            reader.ReadInt();
-
-            m_StartNumber = reader.ReadInt();
-            m_StartMessage = reader.ReadString();
-            m_ProgressNumber = reader.ReadInt();
-            m_ProgressMessage = reader.ReadString();
-            m_ShowTimeRemaining = reader.ReadBool();
-        }
-
-        private void EndLock(Mobile m)
-        {
-            m.EndAction(this);
-        }
-
-        private class TeleportingInfo
-        {
-            private readonly WaitTeleporter m_Teleporter;
-            private readonly Timer m_Timer;
-
-            public TeleportingInfo(WaitTeleporter tele, Timer t)
-            {
-                m_Teleporter = tele;
-                m_Timer = t;
-            }
-
-            public WaitTeleporter Teleporter => m_Teleporter;
-            public Timer Timer => m_Timer;
         }
     }
 
@@ -1345,7 +1139,6 @@ namespace Server.Items
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-
             writer.Write(2); // version
 
             writer.Write(ClilocNumber);
@@ -1356,7 +1149,6 @@ namespace Server.Items
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
-
             int version = reader.ReadInt();
 
             switch (version)

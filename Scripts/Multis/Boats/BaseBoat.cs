@@ -78,8 +78,6 @@ namespace Server.Multis
         {
             new UpdateAllTimer().Start();
             EventSink.WorldSave += EventSink_WorldSave;
-            EventSink.Disconnected += EventSink_Disconnected;
-            EventSink.PlayerDeath += EventSink_PlayerDeath;
         }
 
         public static void UpdateAllComponents()
@@ -112,14 +110,14 @@ namespace Server.Multis
             new UpdateAllTimer().Start();
         }
 
-        public static void EventSink_Disconnected(DisconnectedEventArgs e)
+        public static void OnDisconnected(Mobile m)
         {
-            ForceRemovePilot(e.Mobile);
+            ForceRemovePilot(m);
         }
 
-        public static void EventSink_PlayerDeath(PlayerDeathEventArgs e)
+        public static void OnPlayerDeath(Mobile m)
         {
-            ForceRemovePilot(e.Mobile);
+            ForceRemovePilot(m);
         }
 
         public static void ForceRemovePilot(Mobile m)
@@ -791,9 +789,9 @@ namespace Server.Multis
             Region newReg = Region.Find(Location, Map);
 
             if (oldReg != newReg && oldReg is CorgulRegion)
-                Timer.DelayCall(TimeSpan.FromSeconds(0.5), new TimerStateCallback(CheckExit), oldReg);
+                Timer.DelayCall(TimeSpan.FromSeconds(0.5), CheckExit, oldReg);
             else if (oldReg != newReg && newReg is CorgulWarpRegion)
-                Timer.DelayCall(TimeSpan.FromSeconds(1), new TimerStateCallback(CheckEnter), newReg);
+                Timer.DelayCall(TimeSpan.FromSeconds(1), CheckEnter, newReg);
             #endregion
         }
 
@@ -1611,8 +1609,6 @@ namespace Server.Multis
                 : base(TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(5.0))
             {
                 m_Boat = boat;
-
-                Priority = TimerPriority.TwoFiftyMS;
             }
 
             protected override void OnTick()
@@ -1859,7 +1855,7 @@ namespace Server.Multis
 
             if (wood < minWood || cloth < minCloth)
             {
-                from.SendLocalizedMessage(1116593, string.Format("{0}\t{1}", ((int)minCloth).ToString(), ((int)minWood).ToString())); //You need a minimum of ~1_CLOTH~ yards of cloth and ~2_WOOD~ pieces of lumber to effect repairs to this ship.
+                from.SendLocalizedMessage(1116593, $"{(int)minCloth}\t{(int)minWood}"); //You need a minimum of ~1_CLOTH~ yards of cloth and ~2_WOOD~ pieces of lumber to effect repairs to this ship.
                 return;
             }
 
@@ -1976,7 +1972,7 @@ namespace Server.Multis
                 m_EmergencyRepairTimer = null;
             }
 
-            string args = string.Format("{0}\t{1}\t{2}", ((int)clothTemp).ToString(), ((int)woodTemp).ToString(), ((int)Durability).ToString());
+            string args = $"{(int)clothTemp}\t{(int)woodTemp}\t{(int)Durability}";
             from.SendLocalizedMessage(1116598, args); //You effect permanent repairs using ~1_CLOTH~ yards of cloth and ~2_WOOD~ pieces of lumber. The ship is now ~3_DMGPCT~% repaired.
         }
 
@@ -2916,7 +2912,6 @@ namespace Server.Multis
             {
                 m_Boat = boat;
                 m_SingleMove = single;
-                Priority = TimerPriority.TwentyFiveMS;
             }
 
             protected override void OnTick()
@@ -2947,8 +2942,6 @@ namespace Server.Multis
                 m_Resume = resume;
                 m_ResumeDirection = resumeDir;
                 m_Fast = fast;
-
-                Priority = TimerPriority.TenMS;
             }
 
             protected override void OnTick()

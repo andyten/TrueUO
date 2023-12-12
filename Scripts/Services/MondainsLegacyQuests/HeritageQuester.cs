@@ -136,7 +136,7 @@ namespace Server.Engines.Quests
             SpeechHue = 0x3B2;
 
             if (CheckCompleted(m))
-                Timer.DelayCall(TimeSpan.Zero, TimeSpan.FromSeconds(10), Story.Count + 1, new TimerStateCallback(SayStory), m);
+                Timer.DelayCall(TimeSpan.Zero, TimeSpan.FromSeconds(10), Story.Count + 1, SayStory, m);
             else
             {
                 List<object> incomplete = FindIncompleted(m);
@@ -148,7 +148,7 @@ namespace Server.Engines.Quests
                     delay = TimeSpan.FromSeconds(10);
                 }
 
-                Timer.DelayCall(TimeSpan.Zero, delay, incomplete.Count, new TimerStateCallback(SayInstructions), incomplete);
+                Timer.DelayCall(TimeSpan.Zero, delay, incomplete.Count, SayInstructions, incomplete);
             }
         }
 
@@ -238,10 +238,7 @@ namespace Server.Engines.Quests
 
         public static void RemovePending(Mobile m)
         {
-            if (m_Pending.ContainsKey(m))
-            {
-                m_Pending.Remove(m);
-            }
+            m_Pending.Remove(m);
         }
 
         public static bool IsPending(Mobile m)
@@ -251,7 +248,7 @@ namespace Server.Engines.Quests
 
         public static HeritageQuester Pending(Mobile m)
         {
-            return m_Pending.ContainsKey(m) ? m_Pending[m] : null;
+            return m_Pending.TryGetValue(m, out HeritageQuester value) ? value : null;
         }
 
         public static void Say(Mobile m, object message)

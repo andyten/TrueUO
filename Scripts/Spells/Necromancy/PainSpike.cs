@@ -67,10 +67,10 @@ namespace Server.Spells.Necromancy
 
             InternalTimer t;
 
-            if (m_Table.ContainsKey(m))
+            if (m_Table.TryGetValue(m, out InternalTimer value))
             {
                 damage = Utility.RandomMinMax(3, 7);
-                t = m_Table[m];
+                t = value;
 
                 if (t != null)
                 {
@@ -106,8 +106,6 @@ namespace Server.Spells.Necromancy
             public InternalTimer(Mobile m, double toRestore)
                 : base(TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(250))
             {
-                Priority = TimerPriority.FiftyMS;
-
                 m_Mobile = m;
                 m_ToRestore = (int)toRestore;
 
@@ -120,8 +118,7 @@ namespace Server.Spells.Necromancy
             {
                 if (DateTime.UtcNow >= Expires)
                 {
-                    if (m_Table.ContainsKey(m_Mobile))
-                        m_Table.Remove(m_Mobile);
+                    m_Table.Remove(m_Mobile);
 
                     if (m_Mobile.Alive && !m_Mobile.IsDeadBondedPet)
                         m_Mobile.Hits += m_ToRestore;

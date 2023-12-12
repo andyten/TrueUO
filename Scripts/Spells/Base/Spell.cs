@@ -138,9 +138,9 @@ namespace Server.Spells
 
             Type t = GetType();
 
-            if (m_ContextTable.ContainsKey(t))
+            if (m_ContextTable.TryGetValue(t, out DelayedDamageContextWrapper value))
             {
-                return m_ContextTable[t].Contains(d);
+                return value.Contains(d);
             }
 
             return false;
@@ -1202,8 +1202,6 @@ namespace Server.Spells
                 : base(TimeSpan.Zero, AnimateDelay, count)
             {
                 m_Spell = spell;
-
-                Priority = TimerPriority.FiftyMS;
             }
 
             protected override void OnTick()
@@ -1248,7 +1246,6 @@ namespace Server.Spells
             public CastTimer()
                 : base(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(100))
             {
-                Priority = TimerPriority.FiftyMS;
             }
 
             public static void AddTimer(Spell spell)

@@ -33,8 +33,6 @@ namespace Server.Engines.NewMagincia
 
         public static void Initialize()
         {
-            EventSink.Login += OnLogin;
-
             if (m_Instance != null)
                 m_Instance.PruneMessages();
         }
@@ -118,7 +116,7 @@ namespace Server.Engines.NewMagincia
                 m_Timer.Stop();
 
             m_Timer = Timer.DelayCall(TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1), ProcessTick);
-            m_Timer.Priority = TimerPriority.OneMinute;
+            
             m_Timer.Start();
         }
 
@@ -172,8 +170,7 @@ namespace Server.Engines.NewMagincia
             if (plot.Stone != null && !plot.Stone.Deleted)
                 plot.Stone.Delete();
 
-            if (m_Plots.Contains(plot))
-                m_Plots.Remove(plot);
+            m_Plots.Remove(plot);
 
             if (plot.Map != null && m_FreeHousingZones.ContainsKey(plot.Map) && !m_FreeHousingZones[plot.Map].Contains(plot.Bounds))
                 m_FreeHousingZones[plot.Map].Add(plot.Bounds);
@@ -464,9 +461,8 @@ namespace Server.Engines.NewMagincia
             }
         }
 
-        public static void OnLogin(LoginEventArgs e)
+        public static void OnLogin(Mobile from)
         {
-            Mobile from = e.Mobile;
             CheckMessages(from);
 
             var messages = GetMessages(from);

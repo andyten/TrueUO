@@ -17,7 +17,7 @@ namespace Server.Mobiles
 
         public override Type[] UniqueSAList => new[] { typeof(Slither), typeof(IronwoodCompositeBow), typeof(Venom), typeof(PetrifiedSnake), typeof(StoneDragonsTooth), typeof(MedusaFloorTileAddonDeed), typeof(EternalGuardianStaff) };
 
-        public override Type[] SharedSAList => new Type[] { };
+        public override Type[] SharedSAList => Array.Empty<Type>();
 
         [Constructable]
         public Medusa()
@@ -249,7 +249,7 @@ namespace Server.Mobiles
                 }
             }
 
-            Timer.DelayCall(TimeSpan.FromSeconds(10.0), new TimerCallback(replica.Unpetrify));
+            Timer.DelayCall(TimeSpan.FromSeconds(10.0), replica.Unpetrify);
         }
         #endregion
 
@@ -478,7 +478,7 @@ namespace Server.Mobiles
                     BuffInfo.AddBuff(attacker, new BuffInfo(BuffIcon.MedusaStone, 1153790, 1153825));
                 }
 
-                Timer.DelayCall(TimeSpan.FromSeconds(5.0), new TimerStateCallback<Mobile>(RemovePetrification), attacker);
+                Timer.DelayCall(TimeSpan.FromSeconds(5.0), RemovePetrification, attacker);
             }
         }
         #endregion

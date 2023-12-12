@@ -165,9 +165,9 @@ namespace Server.Engines.NewMagincia
 
             Type t = bc.GetType();
 
-            if (m_NameBuffer.ContainsKey(t))
+            if (m_NameBuffer.TryGetValue(t, out string value))
             {
-                return m_NameBuffer[t];
+                return value;
             }
 
             if (Activator.CreateInstance(t) is BaseCreature c)
@@ -182,9 +182,9 @@ namespace Server.Engines.NewMagincia
 
         public static void AddToBuffer(Type type, string s)
         {
-            if (!string.IsNullOrEmpty(s) && !m_NameBuffer.ContainsKey(type))
+            if (!string.IsNullOrEmpty(s))
             {
-                m_NameBuffer[type] = s;
+                m_NameBuffer.TryAdd(type, s);
             }
         }
 

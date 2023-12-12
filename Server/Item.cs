@@ -1,14 +1,11 @@
-#region References
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-
 using Server.ContextMenus;
 using Server.Items;
 using Server.Network;
 using Server.Targeting;
-#endregion
 
 namespace Server
 {
@@ -650,7 +647,6 @@ namespace Server
 	public enum ExpandFlag
 	{
 		None = 0x000,
-
 		Name = 0x001,
 		Items = 0x002,
 		Bounce = 0x004,
@@ -808,7 +804,7 @@ namespace Server
 			{
 				if (Parent is Container container)
 				{
-					if (value < 0 || value > 0x7C || !container.IsFreePosition(value))
+					if (value > 0x7C || !container.IsFreePosition(value))
 					{
 						m_GridLocation = container.GetNewPosition(0);
 					}
@@ -1013,18 +1009,6 @@ namespace Server
 			ArtData.Measure(bmp, out xMin, out yMin, out xMax, out yMax);
 		}
 
-		public static Rectangle MeasureBound(Bitmap bmp)
-		{
-			Measure(bmp, out int xMin, out int yMin, out int xMax, out int yMax);
-			return new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin);
-		}
-
-		public static Size MeasureSize(Bitmap bmp)
-		{
-			Measure(bmp, out int xMin, out int yMin, out int xMax, out int yMax);
-			return new Size(xMax - xMin, yMax - yMin);
-		}
-
 		private void SetFlag(ImplFlag flag, bool value)
 		{
 			if (value)
@@ -1165,7 +1149,7 @@ namespace Server
 				}
 				else
 				{
-					list.Add(1050039, "{0}\t#{1}", m_Amount, LabelNumber); // ~1_NUMBER~ ~2_ITEMNAME~
+					list.Add(1050039, $"{m_Amount}\t#{LabelNumber}"); // ~1_NUMBER~ ~2_ITEMNAME~
 				}
 			}
 			else
@@ -1176,7 +1160,7 @@ namespace Server
 				}
 				else
 				{
-					list.Add(1050039, "{0}\t{1}", m_Amount, Name); // ~1_NUMBER~ ~2_ITEMNAME~
+					list.Add(1050039, $"{m_Amount}\t{Name}"); // ~1_NUMBER~ ~2_ITEMNAME~
 				}
 			}
 		}
@@ -1208,39 +1192,39 @@ namespace Server
 		/// </summary>
 		public virtual void AddResistanceProperties(ObjectPropertyList list)
 		{
-			int v = PhysicalResistance;
+			int value = PhysicalResistance;
 
-			if (v != 0)
+			if (value != 0)
 			{
-				list.Add(1060448, v.ToString()); // physical resist ~1_val~%
+				list.Add(1060448, $"{value}"); // physical resist ~1_val~%
 			}
 
-			v = FireResistance;
+            value = FireResistance;
 
-			if (v != 0)
+			if (value != 0)
 			{
-				list.Add(1060447, v.ToString()); // fire resist ~1_val~%
+				list.Add(1060447, $"{value}"); // fire resist ~1_val~%
 			}
 
-			v = ColdResistance;
+            value = ColdResistance;
 
-			if (v != 0)
+			if (value != 0)
 			{
-				list.Add(1060445, v.ToString()); // cold resist ~1_val~%
+				list.Add(1060445, $"{value}"); // cold resist ~1_val~%
 			}
 
-			v = PoisonResistance;
+            value = PoisonResistance;
 
-			if (v != 0)
+			if (value != 0)
 			{
-				list.Add(1060449, v.ToString()); // poison resist ~1_val~%
+				list.Add(1060449, $"{value}"); // poison resist ~1_val~%
 			}
 
-			v = EnergyResistance;
+            value = EnergyResistance;
 
-			if (v != 0)
+			if (value != 0)
 			{
-				list.Add(1060446, v.ToString()); // energy resist ~1_val~%
+				list.Add(1060446, $"{value}"); // energy resist ~1_val~%
 			}
 		}
 
@@ -1323,11 +1307,11 @@ namespace Server
 
 				if (weight == 1)
 				{
-					list.Add(1072788, weight.ToString()); //Weight: ~1_WEIGHT~ stone
+					list.Add(1072788, $"{weight}"); //Weight: ~1_WEIGHT~ stone
 				}
 				else
 				{
-					list.Add(1072789, weight.ToString()); //Weight: ~1_WEIGHT~ stones
+					list.Add(1072789, $"{weight}"); //Weight: ~1_WEIGHT~ stones
 				}
 			}
 		}
@@ -1361,14 +1345,14 @@ namespace Server
 		/// </summary>
 		public virtual void AddBlessedForProperty(ObjectPropertyList list, Mobile m)
 		{
-			list.Add(1062203, "{0}", m.Name); // Blessed for ~1_NAME~
+			list.Add(1062203, $"{m.Name}"); // Blessed for ~1_NAME~
 		}
 
 		public virtual void AddItemSocketProperties(ObjectPropertyList list)
 		{
 			if (Sockets != null)
             {
-                for (var index = 0; index < Sockets.Count; index++)
+                for (int index = 0; index < Sockets.Count; index++)
                 {
                     ItemSocket socket = Sockets[index];
                     socket.GetProperties(list);
@@ -1380,7 +1364,7 @@ namespace Server
         {
             if (Sockets != null)
             {
-                for (var index = 0; index < Sockets.Count; index++)
+                for (int index = 0; index < Sockets.Count; index++)
                 {
                     ItemSocket socket = Sockets[index];
                     socket.GetCraftedProperties(list);
@@ -1579,15 +1563,6 @@ namespace Server
 				return true;
 			}
 
-			CheckEquipItemEventArgs e = new CheckEquipItemEventArgs(m, this, message);
-
-			EventSink.InvokeCheckEquipItem(e);
-
-			if (e.Item != this || e.Item.Deleted || e.Block)
-			{
-				return false;
-			}
-
 			if (m.AccessLevel < AccessLevel.GameMaster && BlessedFor != null && BlessedFor != m)
 			{
 				if (message)
@@ -1635,12 +1610,7 @@ namespace Server
 			}
 		}
 
-		public virtual bool DisplayContextMenu(Mobile from)
-		{
-			return ContextMenu.Display(from, this);
-		}
-
-		public virtual bool VerifyMove(Mobile from)
+        public virtual bool VerifyMove(Mobile from)
 		{
 			return Movable;
 		}
@@ -1711,44 +1681,17 @@ namespace Server
 			to.Send(new MessageLocalized(m_Serial, m_ItemID, MessageType.Label, 0x3B2, 3, number, "", ""));
 		}
 
-		public void LabelTo(Mobile to, int number, string args)
-		{
-			to.Send(new MessageLocalized(m_Serial, m_ItemID, MessageType.Label, 0x3B2, 3, number, "", args));
-		}
-
-		public void LabelTo(Mobile to, string text)
+        public void LabelTo(Mobile to, string text)
 		{
 			to.Send(new UnicodeMessage(m_Serial, m_ItemID, MessageType.Label, 0x3B2, 3, "ENU", "", text));
 		}
 
-		public void LabelTo(Mobile to, string format, params object[] args)
-		{
-			LabelTo(to, string.Format(format, args));
-		}
-
-		public void LabelToAffix(Mobile to, int number, AffixType type, string affix)
+        public void LabelToAffix(Mobile to, int number, AffixType type, string affix)
 		{
 			to.Send(new MessageLocalizedAffix(m_Serial, m_ItemID, MessageType.Label, 0x3B2, 3, number, "", type, affix, ""));
 		}
 
-		public void LabelToAffix(Mobile to, int number, AffixType type, string affix, string args)
-		{
-			to.Send(new MessageLocalizedAffix(m_Serial, m_ItemID, MessageType.Label, 0x3B2, 3, number, "", type, affix, args));
-		}
-
-		public virtual void LabelLootTypeTo(Mobile to)
-		{
-			if (m_LootType == LootType.Blessed)
-			{
-				LabelTo(to, 1041362); // (blessed)
-			}
-			else if (m_LootType == LootType.Cursed)
-			{
-				LabelTo(to, "(cursed)");
-			}
-		}
-
-		public bool AtWorldPoint(int x, int y)
+        public bool AtWorldPoint(int x, int y)
 		{
 			return m_Parent == null && m_Location.m_X == x && m_Location.m_Y == y;
 		}
@@ -2055,9 +1998,9 @@ namespace Server
 
             if (Sockets != null && item.Sockets != null)
             {
-                for (var index = 0; index < Sockets.Count; index++)
+                for (int index = 0; index < Sockets.Count; index++)
                 {
-                    var s = Sockets[index];
+                    ItemSocket s = Sockets[index];
 
                     if (!item.HasSocket(s.GetType()))
                     {
@@ -2065,9 +2008,9 @@ namespace Server
                     }
                 }
 
-                for (var index = 0; index < item.Sockets.Count; index++)
+                for (int index = 0; index < item.Sockets.Count; index++)
                 {
-                    var s = item.Sockets[index];
+                    ItemSocket s = item.Sockets[index];
 
                     if (!HasSocket(s.GetType()))
                     {
@@ -2448,7 +2391,7 @@ namespace Server
 			LocationShortXY = 0x00040000,
 			LocationByteXY = 0x00080000,
 			ImplFlags = 0x00100000,
-			InsuredFor = 0x00200000,
+			UNUSED = 0x00200000,
 			BlessedFor = 0x00400000,
 			HeldBy = 0x00800000,
 			IntWeight = 0x01000000,
@@ -2457,15 +2400,7 @@ namespace Server
 			Light = 0x08000000
 		}
 
-		private static void SetSaveFlag(ref SaveFlag flags, SaveFlag toSet, bool setIf)
-		{
-			if (setIf)
-			{
-				flags |= toSet;
-			}
-		}
-
-		private static bool GetSaveFlag(SaveFlag flags, SaveFlag toGet)
+        private static bool GetSaveFlag(SaveFlag flags, SaveFlag toGet)
 		{
 			return (flags & toGet) != 0;
 		}
@@ -2476,29 +2411,21 @@ namespace Server
 
 		public virtual void Serialize(GenericWriter writer)
 		{
-			writer.Write(14); // version
+			writer.Write(15); // version
 
-			// 14
 			writer.Write(Sockets != null ? Sockets.Count : 0);
 
 			if (Sockets != null)
             {
-                for (var index = 0; index < Sockets.Count; index++)
+                for (int index = 0; index < Sockets.Count; index++)
                 {
                     ItemSocket socket = Sockets[index];
                     ItemSocket.Save(socket, writer);
                 }
             }
 
-			// 13: Merge sync
-			// 12: Light no longer backed by Direction
-
-			// 11
 			writer.Write(m_GridLocation);
 
-			// 10: Honesty moved to ItemSockets
-
-			// 9
 			SaveFlag flags = SaveFlag.None;
 
 			int x = m_Location.m_X, y = m_Location.m_Y, z = m_Location.m_Z;
@@ -2639,43 +2566,20 @@ namespace Server
 
 			writer.Write((int)flags);
 
-			/* begin last moved time optimization */
-			long ticks = m_LastMovedTime.Ticks;
-			long now = DateTime.UtcNow.Ticks;
+            /* begin last moved time optimization */
+            long ticks = m_LastMovedTime.Ticks;
+            long now = DateTime.UtcNow.Ticks;
 
-			TimeSpan d;
+            // Calculate the time difference directly without the need for exception handling
+            TimeSpan d = new TimeSpan(Math.Max(0, ticks - now));
 
-			try
-			{
-				d = new TimeSpan(ticks - now);
-			}
-			catch
-			{
-				if (ticks < now)
-				{
-					d = TimeSpan.MaxValue;
-				}
-				else
-				{
-					d = TimeSpan.MaxValue;
-				}
-			}
+            // No need to catch exceptions or do clamping, as TimeSpan.TotalMinutes is always a valid double
+            int minutes = (int)-d.TotalMinutes;
 
-			double minutes = -d.TotalMinutes;
+            writer.WriteEncodedInt(minutes);
+            /* end */
 
-			if (minutes < int.MinValue)
-			{
-				minutes = int.MinValue;
-			}
-			else if (minutes > int.MaxValue)
-			{
-				minutes = int.MaxValue;
-			}
-
-			writer.WriteEncodedInt((int)minutes);
-			/* end */
-
-			if (GetSaveFlag(flags, SaveFlag.Direction))
+            if (GetSaveFlag(flags, SaveFlag.Direction))
 			{
 				writer.Write((byte)m_Direction);
 			}
@@ -2784,11 +2688,6 @@ namespace Server
 			if (GetSaveFlag(flags, SaveFlag.ImplFlags))
 			{
 				writer.WriteEncodedInt((int)implFlags);
-			}
-
-			if (GetSaveFlag(flags, SaveFlag.InsuredFor))
-			{
-				writer.Write((Mobile)null);
 			}
 
 			if (GetSaveFlag(flags, SaveFlag.BlessedFor))
@@ -2984,35 +2883,26 @@ namespace Server
 
 			switch (version)
 			{
+                case 15:
 				case 14:
-				int socketCount = reader.ReadInt();
+                {
+                    int socketCount = reader.ReadInt();
 
-				for (int i = 0; i < socketCount; i++)
-				{
-					ItemSocket.Load(this, reader);
-				}
+                    for (int i = 0; i < socketCount; i++)
+                    {
+                        ItemSocket.Load(this, reader);
+                    }
 
-				goto case 13;
-				case 13:
+                    goto case 13;
+                }
+                case 13:
 				case 12:
 				case 11:
-				m_GridLocation = reader.ReadByte();
-				goto case 10;
-				case 10:
-				{
-					// Honesty removed to ItemSockets
-					if (version < 14)
-					{
-						reader.ReadDateTime();
-						reader.ReadBool();
-						reader.ReadMobile();
-						reader.ReadString();
-
-						HonestyItem = reader.ReadBool();
-					}
-
-					goto case 9;
-				}
+                {
+                    m_GridLocation = reader.ReadByte();
+                    goto case 10;
+                }
+                case 10:
 				case 9:
 				case 8:
 				case 7:
@@ -3020,25 +2910,18 @@ namespace Server
 				{
 					SaveFlag flags = (SaveFlag)reader.ReadInt();
 
-					if (version < 7)
-					{
-						LastMoved = reader.ReadDeltaTime();
-					}
-					else
-					{
-						int minutes = reader.ReadEncodedInt();
+                    int minutes = reader.ReadEncodedInt();
 
-						try
-						{
-							LastMoved = DateTime.UtcNow - TimeSpan.FromMinutes(minutes);
-						}
-						catch
-						{
-							LastMoved = DateTime.UtcNow;
-						}
-					}
+                    try
+                    {
+                        LastMoved = DateTime.UtcNow - TimeSpan.FromMinutes(minutes);
+                    }
+                    catch
+                    {
+                        LastMoved = DateTime.UtcNow;
+                    }
 
-					if (GetSaveFlag(flags, SaveFlag.Direction))
+                    if (GetSaveFlag(flags, SaveFlag.Direction))
 					{
 						m_Direction = (Direction)reader.ReadByte();
 					}
@@ -3046,10 +2929,6 @@ namespace Server
 					if (GetSaveFlag(flags, SaveFlag.Light))
 					{
 						m_Light = (LightType)reader.ReadByte();
-					}
-					else if (version < 12)
-					{
-						m_Light = (LightType)m_Direction;
 					}
 
 					if (GetSaveFlag(flags, SaveFlag.Bounce))
@@ -3162,7 +3041,7 @@ namespace Server
 						}
 					}
 
-					if (version < 8 || !GetSaveFlag(flags, SaveFlag.NullWeight))
+					if (!GetSaveFlag(flags, SaveFlag.NullWeight))
 					{
 						double weight;
 
@@ -3226,12 +3105,6 @@ namespace Server
 						m_Flags = (ImplFlag)reader.ReadEncodedInt();
 					}
 
-					if (GetSaveFlag(flags, SaveFlag.InsuredFor))
-					{
-						/*m_InsuredFor = */
-						reader.ReadMobile();
-					}
-
 					if (GetSaveFlag(flags, SaveFlag.BlessedFor))
 					{
 						AcquireCompactInfo().m_BlessedFor = reader.ReadMobile();
@@ -3246,280 +3119,6 @@ namespace Server
 					{
 						AcquireCompactInfo().m_SavedFlags = reader.ReadEncodedInt();
 					}
-
-					if (m_Map != null && m_Parent == null)
-					{
-						m_Map.OnEnter(this);
-					}
-
-					break;
-				}
-				case 5:
-				{
-					SaveFlag flags = (SaveFlag)reader.ReadInt();
-
-					LastMoved = reader.ReadDeltaTime();
-
-					if (GetSaveFlag(flags, SaveFlag.Direction))
-					{
-						m_Direction = (Direction)reader.ReadByte();
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.Bounce))
-					{
-						AcquireCompactInfo().m_Bounce = BounceInfo.Deserialize(reader);
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.LootType))
-					{
-						m_LootType = (LootType)reader.ReadByte();
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.LocationFull))
-					{
-						m_Location = reader.ReadPoint3D();
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.ItemID))
-					{
-						m_ItemID = reader.ReadInt();
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.Hue))
-					{
-						m_Hue = reader.ReadInt();
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.Amount))
-					{
-						m_Amount = reader.ReadInt();
-					}
-					else
-					{
-						m_Amount = 1;
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.Layer))
-					{
-						m_Layer = (Layer)reader.ReadByte();
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.Name))
-					{
-						string name = reader.ReadString();
-
-						if (name != DefaultName)
-						{
-							AcquireCompactInfo().m_Name = name;
-						}
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.Parent))
-					{
-						Serial parent = reader.ReadInt();
-
-						if (parent.IsMobile)
-						{
-							m_Parent = World.FindMobile(parent);
-						}
-						else if (parent.IsItem)
-						{
-							m_Parent = World.FindItem(parent);
-						}
-						else
-						{
-							m_Parent = null;
-						}
-
-						if (m_Parent == null && (parent.IsMobile || parent.IsItem))
-						{
-							Delete();
-						}
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.Items))
-					{
-						List<Item> items = reader.ReadStrongItemList();
-
-						if (this is Container)
-						{
-							(this as Container).m_Items = items;
-						}
-						else
-						{
-							AcquireCompactInfo().m_Items = items;
-						}
-					}
-
-					double weight;
-
-					if (GetSaveFlag(flags, SaveFlag.IntWeight))
-					{
-						weight = reader.ReadEncodedInt();
-					}
-					else if (GetSaveFlag(flags, SaveFlag.WeightNot1or0))
-					{
-						weight = reader.ReadDouble();
-					}
-					else if (GetSaveFlag(flags, SaveFlag.WeightIs0))
-					{
-						weight = 0.0;
-					}
-					else
-					{
-						weight = 1.0;
-					}
-
-					if (weight != DefaultWeight)
-					{
-						AcquireCompactInfo().m_Weight = weight;
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.Map))
-					{
-						m_Map = reader.ReadMap();
-					}
-					else
-					{
-						m_Map = Map.Internal;
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.Visible))
-					{
-						SetFlag(ImplFlag.Visible, reader.ReadBool());
-					}
-					else
-					{
-						SetFlag(ImplFlag.Visible, true);
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.Movable))
-					{
-						SetFlag(ImplFlag.Movable, reader.ReadBool());
-					}
-					else
-					{
-						SetFlag(ImplFlag.Movable, true);
-					}
-
-					if (GetSaveFlag(flags, SaveFlag.Stackable))
-					{
-						SetFlag(ImplFlag.Stackable, reader.ReadBool());
-					}
-
-					if (m_Map != null && m_Parent == null)
-					{
-						m_Map.OnEnter(this);
-					}
-
-					break;
-				}
-				case 4: // Just removed variables
-				case 3:
-				{
-					m_Direction = (Direction)reader.ReadInt();
-
-					goto case 2;
-				}
-				case 2:
-				{
-					AcquireCompactInfo().m_Bounce = BounceInfo.Deserialize(reader);
-					LastMoved = reader.ReadDeltaTime();
-
-					goto case 1;
-				}
-				case 1:
-				{
-					m_LootType = (LootType)reader.ReadByte(); //m_Newbied = reader.ReadBool();
-
-					goto case 0;
-				}
-				case 0:
-				{
-					m_Location = reader.ReadPoint3D();
-					m_ItemID = reader.ReadInt();
-					m_Hue = reader.ReadInt();
-					m_Amount = reader.ReadInt();
-					m_Layer = (Layer)reader.ReadByte();
-
-					string name = reader.ReadString();
-
-					if (name != DefaultName)
-					{
-						AcquireCompactInfo().m_Name = name;
-					}
-
-					Serial parent = reader.ReadInt();
-
-					if (parent.IsMobile)
-					{
-						m_Parent = World.FindMobile(parent);
-					}
-					else if (parent.IsItem)
-					{
-						m_Parent = World.FindItem(parent);
-					}
-					else
-					{
-						m_Parent = null;
-					}
-
-					if (m_Parent == null && (parent.IsMobile || parent.IsItem))
-					{
-						Delete();
-					}
-
-					int count = reader.ReadInt();
-
-					if (count > 0)
-					{
-						List<Item> items = new List<Item>(count);
-
-						for (int i = 0; i < count; ++i)
-						{
-							Item item = reader.ReadItem();
-
-							if (item != null)
-							{
-								items.Add(item);
-							}
-						}
-
-						if (this is Container)
-						{
-							(this as Container).m_Items = items;
-						}
-						else
-						{
-							AcquireCompactInfo().m_Items = items;
-						}
-					}
-
-					double weight = reader.ReadDouble();
-
-					if (weight != DefaultWeight)
-					{
-						AcquireCompactInfo().m_Weight = weight;
-					}
-
-					if (version <= 3)
-					{
-						reader.ReadInt();
-						reader.ReadInt();
-						reader.ReadInt();
-					}
-
-					m_Map = reader.ReadMap();
-					SetFlag(ImplFlag.Visible, reader.ReadBool());
-					SetFlag(ImplFlag.Movable, reader.ReadBool());
-
-					if (version <= 3)
-					{
-						/*m_Deleted =*/
-						reader.ReadBool();
-					}
-
-					Stackable = reader.ReadBool();
 
 					if (m_Map != null && m_Parent == null)
 					{
@@ -3559,12 +3158,7 @@ namespace Server
 			}
 		}
 
-		public virtual int GetMaxUpdateRange()
-		{
-			return Core.GlobalMaxUpdateRange;
-		}
-
-		public virtual int GetUpdateRange(Mobile m)
+        public virtual int GetUpdateRange(Mobile m)
 		{
 			return m.NetState == null ? Core.GlobalUpdateRange : m.NetState.UpdateRange;
 		}
@@ -4147,11 +3741,11 @@ namespace Server
 
 			while (--i >= 0)
 			{
-				if (i < m_DeltaQueue.Count)
+				if (i < m_DeltaQueue.Count && m_DeltaQueue[i] != null)
 				{
-					m_DeltaQueue[i].ProcessDelta();
-					m_DeltaQueue.RemoveAt(i);
-				}
+                    m_DeltaQueue[i].ProcessDelta();
+                    m_DeltaQueue.RemoveAt(i);
+                }
 			}
 
 			_Processing = false;
@@ -5350,17 +4944,7 @@ namespace Server
 			eable.Free();
 		}
 
-		public void SendLocalizedMessageTo(Mobile to, int number, AffixType affixType, string affix, string args)
-		{
-			if (Deleted || !to.CanSee(this))
-			{
-				return;
-			}
-
-			to.Send(new MessageLocalizedAffix(Serial, ItemID, MessageType.Regular, 0x3B2, 3, number, "", affixType, affix, args));
-		}
-
-		#region OnDoubleClick[...]
+        #region OnDoubleClick[...]
 		public virtual void OnDoubleClick(Mobile from)
 		{ }
 
@@ -5663,10 +5247,6 @@ namespace Server
 			}
 		}
 
-		private static bool m_ScissorCopyLootType;
-
-		public static bool ScissorCopyLootType { get => m_ScissorCopyLootType; set => m_ScissorCopyLootType = value; }
-
 		public virtual void ScissorHelper(Mobile from, Item newItem, int amountPerOldItem)
 		{
 			ScissorHelper(from, newItem, amountPerOldItem, true);
@@ -5687,9 +5267,8 @@ namespace Server
 			Map thisMap = Map;
 			object thisParent = m_Parent;
 			Point3D worldLoc = GetWorldLocation();
-			LootType type = LootType;
 
-			if (Amount == 0)
+            if (Amount == 0)
 			{
 				Delete();
 			}
@@ -5701,12 +5280,7 @@ namespace Server
 				newItem.Hue = ourHue;
 			}
 
-			if (m_ScissorCopyLootType)
-			{
-				newItem.LootType = type;
-			}
-
-			if (!(thisParent is Container) || !((Container)thisParent).TryDropItem(from, newItem, false))
+			if (!(thisParent is Container container) || !container.TryDropItem(from, newItem, false))
 			{
 				newItem.MoveToWorld(worldLoc, thisMap);
 			}
@@ -5859,8 +5433,6 @@ namespace Server
 				World.m_ItemTypes.Add(ourType);
 				m_TypeRef = World.m_ItemTypes.Count - 1;
 			}
-
-			Timer.DelayCall(EventSink.InvokeItemCreated, new ItemCreatedEventArgs(this));
 		}
 
 		[Constructable]
@@ -5928,17 +5500,14 @@ namespace Server
 			InvalidateProperties();
 		}
 
-		public bool RemoveSocket<T>()
+		public void RemoveSocket<T>()
 		{
 			ItemSocket socket = GetSocket(typeof(T));
 
 			if (socket != null)
 			{
 				RemoveItemSocket(socket);
-				return true;
 			}
-
-			return false;
 		}
 
 		public void RemoveItemSocket(ItemSocket socket)
@@ -5968,9 +5537,9 @@ namespace Server
 
             ItemSocket first = null;
 
-            for (var index = 0; index < Sockets.Count; index++)
+            for (int index = 0; index < Sockets.Count; index++)
             {
-                var s = Sockets[index];
+                ItemSocket s = Sockets[index];
 
                 if (s.GetType() == typeof(T))
                 {
@@ -5982,39 +5551,16 @@ namespace Server
             return first as T;
 		}
 
-		public T GetSocket<T>(Func<T, bool> predicate) where T : ItemSocket
+        public ItemSocket GetSocket(Type type)
 		{
 			if (Sockets == null)
 			{
 				return null;
 			}
 
-            ItemSocket first = null;
-
-            for (var index = 0; index < Sockets.Count; index++)
+            for (int index = 0; index < Sockets.Count; index++)
             {
-                var s = Sockets[index];
-
-                if (s.GetType() == typeof(T) && (predicate == null || predicate(s as T)))
-                {
-                    first = s;
-                    break;
-                }
-            }
-
-            return first as T;
-		}
-
-		public ItemSocket GetSocket(Type type)
-		{
-			if (Sockets == null)
-			{
-				return null;
-			}
-
-            for (var index = 0; index < Sockets.Count; index++)
-            {
-                var s = Sockets[index];
+                ItemSocket s = Sockets[index];
 
                 if (s.GetType() == type)
                 {
@@ -6032,9 +5578,9 @@ namespace Server
 				return false;
 			}
 
-            for (var index = 0; index < Sockets.Count; index++)
+            for (int index = 0; index < Sockets.Count; index++)
             {
-                var s = Sockets[index];
+                ItemSocket s = Sockets[index];
 
                 if (s.GetType() == typeof(T))
                 {
@@ -6052,9 +5598,9 @@ namespace Server
 				return false;
 			}
 
-            for (var index = 0; index < Sockets.Count; index++)
+            for (int index = 0; index < Sockets.Count; index++)
             {
-                var s = Sockets[index];
+                ItemSocket s = Sockets[index];
 
                 if (s.GetType() == t)
                 {
@@ -6219,8 +5765,6 @@ namespace Server
 			{
 				Instance = this;
 				Start();
-
-                Priority = TimerPriority.FiftyMS;
             }
 
 			public static bool HasTimer(ItemSocket socket)
@@ -6246,12 +5790,9 @@ namespace Server
 
 				if (timer != null)
 				{
-					if (timer.TimerRegistry.ContainsKey(socket))
-					{
-						timer.TimerRegistry.Remove(socket);
-					}
+                    timer.TimerRegistry.Remove(socket);
 
-					if (timer.TimerRegistry.Count == 0)
+                    if (timer.TimerRegistry.Count == 0)
 					{
 						timer.Stop();
 						Instance = null;

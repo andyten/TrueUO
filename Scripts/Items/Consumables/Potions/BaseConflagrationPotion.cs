@@ -36,7 +36,7 @@ namespace Server.Items
 
             if (delay > 0)
             {
-                from.SendLocalizedMessage(1072529, string.Format("{0}\t{1}", delay, delay > 1 ? "seconds." : "second.")); // You cannot use that for another ~1_NUM~ ~2_TIMEUNITS~
+                from.SendLocalizedMessage(1072529, $"{delay}\t{(delay > 1 ? "seconds." : "second.")}"); // You cannot use that for another ~1_NUM~ ~2_TIMEUNITS~
                 return;
             }
 
@@ -118,7 +118,7 @@ namespace Server.Items
                 timer.Stop();
             }
 
-            m_Delay[m] = Timer.DelayCall(TimeSpan.FromSeconds(30), new TimerStateCallback(EndDelay_Callback), m);
+            m_Delay[m] = Timer.DelayCall(TimeSpan.FromSeconds(30), EndDelay_Callback, m);
         }
 
         public static int GetDelay(Mobile m)
@@ -190,7 +190,7 @@ namespace Server.Items
                     to = new Entity(Serial.Zero, new Point3D(p), from.Map);
 
                 Effects.SendMovingEffect(from, to, 0xF0D, 7, 0, false, false, m_Potion.Hue, 0);
-                Timer.DelayCall(TimeSpan.FromSeconds(1.5), new TimerStateCallback(m_Potion.Explode_Callback), new object[] { from, new Point3D(p), from.Map });
+                Timer.DelayCall(TimeSpan.FromSeconds(1.5), m_Potion.Explode_Callback, new object[] { from, new Point3D(p), from.Map });
             }
         }
 
@@ -307,8 +307,6 @@ namespace Server.Items
                 {
                     m_Item = item;
                     m_End = end;
-
-                    Priority = TimerPriority.FiftyMS;
                 }
 
                 protected override void OnTick()

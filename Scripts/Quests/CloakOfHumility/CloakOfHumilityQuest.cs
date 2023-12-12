@@ -68,8 +68,7 @@ namespace Server.Engines.Quests
 
             foreach (Mobile m in toRemove)
             {
-                if (m_CooldownTable.ContainsKey(m))
-                    m_CooldownTable.Remove(m);
+                m_CooldownTable.Remove(m);
             }
         }
 
@@ -366,8 +365,7 @@ namespace Server.Engines.Quests
 
         public void RemoveQuestItem(Item item)
         {
-            if (m_QuestItems.Contains(item))
-                m_QuestItems.Remove(item);
+            m_QuestItems.Remove(item);
         }
 
         public void OnGivenTo(Mobile m)
@@ -444,16 +442,11 @@ namespace Server.Engines.Quests
 
     public class HumilityProofGump : BaseQuest
     {
-        public static void Initialize()
+        public static void OnLogin(Mobile m)
         {
-            EventSink.Login += new LoginEventHandler(OnLogin);
-        }
-
-        private static void OnLogin(LoginEventArgs e)
-        {
-            if (e.Mobile is PlayerMobile pm && Gareth.CheckQuestStatus(pm, HumilityQuestStatus.RewardPending))
+            if (m is PlayerMobile pm && Gareth.CheckQuestStatus(pm, HumilityQuestStatus.RewardPending))
             {
-                var quest = new HumilityProofGump
+                HumilityProofGump quest = new HumilityProofGump
                 {
                     Owner = pm,
                     Quester = null

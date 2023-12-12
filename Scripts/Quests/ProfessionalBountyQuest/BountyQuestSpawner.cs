@@ -202,8 +202,7 @@ namespace Server.Engines.Quests
 
         public static void AddZone(SpawnDefinition def)
         {
-            if (!m_Zones.ContainsKey(def.Zone))
-                m_Zones.Add(def.Zone, def);
+            m_Zones.TryAdd(def.Zone, def);
         }
 
         public void HandleDeath(BaseShipCaptain captain)
@@ -219,19 +218,16 @@ namespace Server.Engines.Quests
         {
             SpawnZone zone = pirate.Zone;
 
-            if (m_ActiveZones[zone].Contains(pirate))
-                m_ActiveZones[zone].Remove(pirate);
+            m_ActiveZones[zone].Remove(pirate);
 
-            if (m_Bounties.ContainsKey(pirate))
-                m_Bounties.Remove(pirate);
+            m_Bounties.Remove(pirate);
         }
 
         public void RemoveMerchant(BaseShipCaptain merchant)
         {
             SpawnZone zone = merchant.Zone;
 
-            if (m_ActiveZones[zone].Contains(merchant))
-                m_ActiveZones[zone].Remove(merchant);
+            m_ActiveZones[zone].Remove(merchant);
         }
 
         public void OnTick()
@@ -804,7 +800,7 @@ namespace Server.Engines.Quests
                     mapitem.AddWorldPin(pnt.X, pnt.Y);
                 }
 
-                mapitem.Name = string.Format("Pirate - Jhelom {0}", i + 1);
+                mapitem.Name = $"Pirate - Jhelom {i + 1}";
                 e.Mobile.AddToBackpack(mapitem);
             }
 
@@ -819,7 +815,7 @@ namespace Server.Engines.Quests
                     mapitem.AddWorldPin(pnt.X, pnt.Y);
                 }
 
-                mapitem.Name = string.Format("Pirate - Moonglow {0}", i + 1);
+                mapitem.Name = $"Pirate - Moonglow {i + 1}";
                 e.Mobile.AddToBackpack(mapitem);
             }
 
@@ -834,7 +830,7 @@ namespace Server.Engines.Quests
                     mapitem.AddWorldPin(pnt.X, pnt.Y);
                 }
 
-                mapitem.Name = string.Format("Pirate - tokuno {0}", i + 1);
+                mapitem.Name = $"Pirate - tokuno {i + 1}";
                 e.Mobile.AddToBackpack(mapitem);
             }
 
@@ -849,7 +845,7 @@ namespace Server.Engines.Quests
                     mapitem.AddWorldPin(pnt.X, pnt.Y);
                 }
 
-                mapitem.Name = string.Format("Merchant - tokuno {0}", i + 1);
+                mapitem.Name = $"Merchant - tokuno {i + 1}";
                 e.Mobile.AddToBackpack(mapitem);
             }
             for (int i = 0; i < SpawnDefinition.MerchantTramFelCourses1.Length; i++)
@@ -863,7 +859,7 @@ namespace Server.Engines.Quests
                     mapitem.AddWorldPin(pnt.X, pnt.Y);
                 }
 
-                mapitem.Name = string.Format("Merchant - tram/fel(a) {0}", i + 1);
+                mapitem.Name = $"Merchant - tram/fel(a) {i + 1}";
                 e.Mobile.AddToBackpack(mapitem);
             }
             for (int i = 0; i < SpawnDefinition.MerchantTramFelCourses2.Length; i++)
@@ -877,7 +873,7 @@ namespace Server.Engines.Quests
                     mapitem.AddWorldPin(pnt.X, pnt.Y);
                 }
 
-                mapitem.Name = string.Format("Merchant - tram/fel(b) {0}", i + 1);
+                mapitem.Name = $"Merchant - tram/fel(b) {i + 1}";
                 e.Mobile.AddToBackpack(mapitem);
             }
 

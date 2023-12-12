@@ -296,7 +296,7 @@ namespace Server.Mobiles
                         m_NewsTimer = Timer.DelayCall(
                             TimeSpan.FromSeconds(1.0),
                             TimeSpan.FromSeconds(3.0),
-                            new TimerStateCallback(ShoutNews_Callback),
+                            ShoutNews_Callback,
                             new object[] { tce, 0 });
 
                         PublicOverheadMessage(MessageType.Regular, 0x3B2, 502978); // Some of the latest news!
@@ -312,14 +312,14 @@ namespace Server.Mobiles
                         continue;
                     }
 
-                    string keyword = rumor.Keyword;
+                    string keyword = rumor.Keyword.ToLower();
 
-                    if (keyword == null || (keyword = keyword.Trim()).Length == 0)
+                    if ((keyword = keyword.Trim()).Length == 0)
                     {
                         continue;
                     }
 
-                    if (Insensitive.Equals(keyword, e.Speech))
+                    if (e.Speech.ToLower().Contains(keyword))
                     {
                         string message = rumor.Message;
 
@@ -755,7 +755,7 @@ namespace Server.Mobiles
         {
             AddPage(1 + page);
 
-            AddHtml(430, 70, 180, 25, string.Format("Page {0} of {1}", page + 1, (entries.Length + 19) / 20), false, false);
+            AddHtml(430, 70, 180, 25, $"Page {page + 1} of {(entries.Length + 19) / 20}", false, false);
 
             for (int count = 0, i = page * 20; count < 20 && i < entries.Length; ++count, ++i)
             {
@@ -792,11 +792,11 @@ namespace Server.Mobiles
             public readonly bool m_Vendor;
 
             public Entry(string desc)
-                : this(desc, string.Format("the {0}", desc.ToLower()), false)
+                : this(desc, $"the {desc.ToLower()}", false)
             { }
 
             public Entry(string desc, bool vendor)
-                : this(desc, string.Format("the {0}", desc.ToLower()), vendor)
+                : this(desc, $"the {desc.ToLower()}", vendor)
             { }
 
             public Entry(string desc, string title, bool vendor)

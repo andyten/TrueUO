@@ -4,7 +4,6 @@ using System.Collections.Generic;
 
 namespace Server.Engines.BulkOrders
 {
-    [TypeAlias("Scripts.Engines.BulkOrders.LargeBOD")]
     public abstract class LargeBOD : Item, IBOD
     {
         public abstract BODType BODType { get; }
@@ -129,22 +128,6 @@ namespace Server.Engines.BulkOrders
             reward = null;
             gold = ComputeGold();
             fame = ComputeFame();
-
-            if (!BulkOrderSystem.NewSystemEnabled)
-            {
-                List<Item> rewards = ComputeRewards(false);
-
-                if (rewards.Count > 0)
-                {
-                    reward = rewards[Utility.Random(rewards.Count)];
-
-                    for (int i = 0; i < rewards.Count; ++i)
-                    {
-                        if (rewards[i] != reward)
-                            rewards[i].Delete();
-                    }
-                }
-            }
         }
 
         public override void GetProperties(ObjectPropertyList list)
@@ -162,7 +145,7 @@ namespace Server.Engines.BulkOrders
             list.Add(1060656, m_AmountMax.ToString()); // amount to make: ~1_val~
 
             for (int i = 0; i < m_Entries.Length; ++i)
-                list.Add(1060658 + i, "#{0}\t{1}", m_Entries[i].Details.Number, m_Entries[i].Amount); // ~1_val~: ~2_val~
+                list.Add(1060658 + i, $"#{m_Entries[i].Details.Number}\t{m_Entries[i].Amount}"); // ~1_val~: ~2_val~
         }
 
         public override void OnDoubleClickNotAccessible(Mobile from)
@@ -179,7 +162,6 @@ namespace Server.Engines.BulkOrders
         {
             if (IsChildOf(from.Backpack) || InSecureTrade || RootParent is PlayerVendor)
             {
-                EventSink.InvokeBODUsed(new BODUsedEventArgs(from, this));
                 from.SendGump(new LargeBODGump(from, this));
             }
             else

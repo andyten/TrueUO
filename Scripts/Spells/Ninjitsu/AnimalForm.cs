@@ -13,18 +13,13 @@ namespace Server.Spells.Ninjitsu
 {
     public class AnimalForm : NinjaSpell
     {
-        public static void Initialize()
+        public static void OnLogin(Mobile m)
         {
-            EventSink.Login += OnLogin;
-        }
-
-        public static void OnLogin(LoginEventArgs e)
-        {
-            AnimalFormContext context = GetContext(e.Mobile);
+            AnimalFormContext context = GetContext(m);
 
             if (context != null && context.SpeedBoost)
             {
-                e.Mobile.SendSpeedControl(SpeedControlType.MountSpeed);
+                m.SendSpeedControl(SpeedControlType.MountSpeed);
             }
         }
 
@@ -179,9 +174,9 @@ namespace Server.Spells.Ninjitsu
 
         public int GetLastAnimalForm(Mobile m)
         {
-            if (m_LastAnimalForms.ContainsKey(m))
+            if (m_LastAnimalForms.TryGetValue(m, out int value))
             {
-                return m_LastAnimalForms[m];
+                return value;
             }
 
             return -1;
@@ -350,8 +345,10 @@ namespace Server.Spells.Ninjitsu
 
         public static AnimalFormContext GetContext(Mobile m)
         {
-            if (m_Table.ContainsKey(m))
-                return m_Table[m];
+            if (m_Table.TryGetValue(m, out AnimalFormContext value))
+            {
+                return value;
+            }
 
             return null;
         }
@@ -622,8 +619,6 @@ namespace Server.Spells.Ninjitsu
             m_Body = body;
             m_Hue = hue;
             m_Counter = 0;
-
-            Priority = TimerPriority.FiftyMS;
         }
 
         protected override void OnTick()

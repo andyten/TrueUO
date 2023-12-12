@@ -42,7 +42,7 @@ namespace Server.Items
         public virtual int BuffDescription => 0;
         public virtual FishPieEffect Effect => FishPieEffect.None;
 
-        private static readonly Dictionary<Mobile, FishPieEffect> m_EffectsList = new Dictionary<Mobile, FishPieEffect>();
+        private static readonly Dictionary<Mobile, FishPieEffect> _EffectsList = new Dictionary<Mobile, FishPieEffect>();
 
         public BaseFishPie() : base(4161)
         {
@@ -58,25 +58,27 @@ namespace Server.Items
 
         public static bool IsUnderEffects(Mobile from, FishPieEffect type)
         {
-            if (!m_EffectsList.ContainsKey(from))
+            if (!_EffectsList.TryGetValue(from, out FishPieEffect value))
             {
                 return false;
             }
 
-            return m_EffectsList[from] == type;
+            return value == type;
         }
 
         public static void RemoveEffects(Mobile from)
         {
-            if (!m_EffectsList.ContainsKey(from))
+            if (!_EffectsList.TryGetValue(from, out FishPieEffect value))
             {
                 return;
             }
 
-            if (m_EffectsList[from] == FishPieEffect.WeaponDam)
+            if (value == FishPieEffect.WeaponDam)
+            {
                 from.Delta(MobileDelta.WeaponDamage);
+            }
 
-            m_EffectsList.Remove(from);
+            _EffectsList.Remove(from);
 
             BuffInfo.RemoveBuff(from, BuffIcon.FishPie);            
         }
@@ -118,40 +120,89 @@ namespace Server.Items
         {
             RemoveEffects(from);
 
-            m_EffectsList[from] = Effect;
+            _EffectsList[from] = Effect;
 
             switch (Effect)
             {
                 default:
-                case FishPieEffect.None: break;
+                case FishPieEffect.None:
+                {
+                    break;
+                }
                 case FishPieEffect.MedBoost:
+                {
                     TimedSkillMod mod1 = new TimedSkillMod(SkillName.Meditation, true, 10.0, Duration)
                     {
                         ObeyCap = true
                     };
                     from.AddSkillMod(mod1);
                     break;
+                }
                 case FishPieEffect.FocusBoost:
+                {
                     TimedSkillMod mod2 = new TimedSkillMod(SkillName.Focus, true, 10.0, Duration)
                     {
                         ObeyCap = true
                     };
                     from.AddSkillMod(mod2);
                     break;
-                case FishPieEffect.ColdSoak: break;
-                case FishPieEffect.EnergySoak: break;
-                case FishPieEffect.PoisonSoak: break;
-                case FishPieEffect.FireSoak: break;
-                case FishPieEffect.PhysicalSoak: break;
-                case FishPieEffect.WeaponDam: break;
-                case FishPieEffect.HitChance: break;
-                case FishPieEffect.DefChance: break;
-                case FishPieEffect.SpellDamage: break;
-                case FishPieEffect.ManaRegen: break;
-                case FishPieEffect.StamRegen: break;
-                case FishPieEffect.HitsRegen: break;
-                case FishPieEffect.SoulCharge: break;
-                case FishPieEffect.CastFocus: break;
+                }
+                case FishPieEffect.ColdSoak:
+                {
+                    break;
+                }
+                case FishPieEffect.EnergySoak:
+                {
+                    break;
+                }
+                case FishPieEffect.PoisonSoak:
+                {
+                    break;
+                }
+                case FishPieEffect.FireSoak:
+                {
+                    break;
+                }
+                case FishPieEffect.PhysicalSoak:
+                {
+                    break;
+                }
+                case FishPieEffect.WeaponDam:
+                {
+                    break;
+                }
+                case FishPieEffect.HitChance:
+                {
+                    break;
+                }
+                case FishPieEffect.DefChance:
+                {
+                    break;
+                }
+                case FishPieEffect.SpellDamage:
+                {
+                    break;
+                }
+                case FishPieEffect.ManaRegen:
+                {
+                    break;
+                }
+                case FishPieEffect.StamRegen:
+                {
+                    break;
+                }
+                case FishPieEffect.HitsRegen:
+                {
+                    break;
+                }
+                case FishPieEffect.SoulCharge:
+                {
+                    break;
+                }
+                case FishPieEffect.CastFocus:
+                {
+                    break;
+                }
             }
 
             if (Effect != FishPieEffect.None)
@@ -159,23 +210,23 @@ namespace Server.Items
                 Timer t = new InternalTimer(Duration, from);
                 t.Start();
 
-                BuffInfo.AddBuff(from, new BuffInfo(BuffIcon.FishPie, 1116559, string.Format("#{0}", Buff), 1116560, string.Format("+{0}\t#{1}", BuffAmount, BuffDescription), Duration, from)); // Magic Fish Buff<br>~1_val~
+                BuffInfo.AddBuff(from, new BuffInfo(BuffIcon.FishPie, 1116559, $"#{Buff}", 1116560, $"+{BuffAmount}\t#{BuffDescription}", Duration, from)); // Magic Fish Buff<br>~1_val~
             }
         }
 
         private class InternalTimer : Timer
         {
-            private readonly Mobile m_From;
+            private readonly Mobile _From;
 
             public InternalTimer(TimeSpan duration, Mobile from)
                 : base(duration)
             {
-                m_From = from;
+                _From = from;
             }
 
             protected override void OnTick()
             {
-                RemoveEffects(m_From);
+                RemoveEffects(_From);
             }
         }
 
@@ -197,7 +248,9 @@ namespace Server.Items
         public override void OnDoubleClick(Mobile from)
         {
             if (!Movable)
+            {
                 return;
+            }
 
             if (!from.InRange(GetWorldLocation(), 1))
             {

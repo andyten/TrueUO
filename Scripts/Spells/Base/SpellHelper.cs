@@ -1436,8 +1436,6 @@ namespace Server.Spells
 
                 if (m_Spell != null && m_Spell.DelayedDamage && !m_Spell.DelayedDamageStacking)
                     m_Spell.StartDelayedDamageContext(target, this);
-
-                Priority = TimerPriority.TwentyFiveMS;
             }
 
             protected override void OnTick()
@@ -1493,8 +1491,6 @@ namespace Server.Spells
 
                 if (m_Spell != null && m_Spell.DelayedDamage && !m_Spell.DelayedDamageStacking)
                     m_Spell.StartDelayedDamageContext(target, this);
-
-                Priority = TimerPriority.TwentyFiveMS;
             }
 
             protected override void OnTick()
@@ -1566,10 +1562,8 @@ namespace Server.Spells
 
         public static void RemoveContext(Mobile m, TransformContext context, bool resetGraphics)
         {
-            if (m_Table.ContainsKey(m))
+            if (m_Table.Remove(m))
             {
-                m_Table.Remove(m);
-
                 List<ResistanceMod> mods = context.Mods;
 
                 for (int i = 0; i < mods.Count; ++i)
@@ -1588,9 +1582,7 @@ namespace Server.Spells
 
         public static TransformContext GetContext(Mobile m)
         {
-            TransformContext context = null;
-
-            m_Table.TryGetValue(m, out context);
+            m_Table.TryGetValue(m, out TransformContext context);
 
             return context;
         }

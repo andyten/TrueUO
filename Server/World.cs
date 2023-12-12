@@ -72,15 +72,6 @@ namespace Server
 
 		public static void Broadcast(int hue, bool ascii, AccessLevel access, string text)
 		{
-			WorldBroadcastEventArgs e = new WorldBroadcastEventArgs(hue, ascii, access, text);
-
-			EventSink.InvokeWorldBroadcast(e);
-
-			hue = e.Hue;
-			ascii = e.Ascii;
-			text = e.Text;
-			access = e.Access;
-
 			if (string.IsNullOrWhiteSpace(text))
 			{
 				return;
@@ -829,21 +820,12 @@ namespace Server
 			}
 		}
 
-		internal static int m_Saves;
-
-		public static void Save()
-		{
-			Save(true, false);
-		}
-
-		public static void Save(bool message, bool permitBackgroundWrite)
+		public static void Save(bool message)
 		{
 			if (Saving)
 			{
 				return;
 			}
-
-			++m_Saves;
 
 			NetState.FlushAll();
 			NetState.Pause();
@@ -858,10 +840,7 @@ namespace Server
 			{
 				Broadcast(0x35, false, AccessLevel.Player, "The world is saving, please wait.");
 			}
-
-			SaveStrategy strategy = SaveStrategy.Acquire();
-			Console.WriteLine("Core: Using {0} save strategy", strategy.Name.ToLowerInvariant());
-
+            
 			Console.WriteLine("World: Saving...");
 
 			Stopwatch watch = Stopwatch.StartNew();
@@ -879,7 +858,6 @@ namespace Server
 				Directory.CreateDirectory("Saves/Guilds/");
 			}
 
-
 			try
 			{
 				EventSink.InvokeBeforeWorldSave(new BeforeWorldSaveEventArgs());
@@ -889,11 +867,13 @@ namespace Server
 				throw new Exception("FATAL: Exception in EventSink.BeforeWorldSave", e);
 			}
 
-            strategy.Save(permitBackgroundWrite);
+            SaveStrategy strategy = new SaveStrategy();
+
+            strategy.Save();
 
             try
 			{
-				EventSink.InvokeWorldSave(new WorldSaveEventArgs(message));
+				EventSink.InvokeWorldSave(new WorldSaveEventArgs());
 			}
 			catch (Exception e)
 			{
@@ -904,21 +884,17 @@ namespace Server
 
 			Saving = false;
 
-			if (!permitBackgroundWrite)
-			{
-				NotifyDiskWriteComplete();
-				//Sets the DiskWriteHandle.  If we allow background writes, we leave this upto the individual save strategies.
-			}
+            NotifyDiskWriteComplete();
 
-			ProcessSafetyQueues();
+            ProcessSafetyQueues();
 
 			strategy.ProcessDecay();
 
-			Console.WriteLine("Save finished in {0:F2} seconds.", watch.Elapsed.TotalSeconds);
+			Console.WriteLine($"Save finished in {watch.Elapsed.TotalSeconds:F2} seconds.");
 
 			if (message)
 			{
-				Broadcast(0x35, false, AccessLevel.Player, "World save done in {0:F1} seconds.", watch.Elapsed.TotalSeconds);
+				Broadcast(0x35, false, AccessLevel.Player, $"World save done in {watch.Elapsed.TotalSeconds:F1} seconds.");
 			}
 
 			NetState.Resume();

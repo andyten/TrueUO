@@ -92,12 +92,9 @@ namespace Server.Misc
                 }
             }
         }
-        public override string DefaultName => "shard poller";
-        public static void Initialize()
-        {
-            EventSink.Login += EventSink_Login;
-        }
 
+        public override string DefaultName => "shard poller";
+        
         public bool HasAlreadyVoted(NetState ns)
         {
             for (int i = 0; i < m_Options.Length; ++i)
@@ -209,12 +206,12 @@ namespace Server.Misc
             Active = false;
         }
 
-        private static void EventSink_Login(LoginEventArgs e)
+        public static void OnLogin(Mobile m)
         {
             if (m_ActivePollers.Count == 0)
                 return;
 
-            Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(EventSink_Login_Callback), e.Mobile);
+            Timer.DelayCall(TimeSpan.FromSeconds(1.0), EventSink_Login_Callback, m);
         }
 
         private static void EventSink_Login_Callback(object state)
@@ -427,7 +424,7 @@ namespace Server.Misc
 
             if (editing)
             {
-                AddHtml(22, 22, 294, 20, Color(string.Format("{0} total", totalVotes), LabelColor32), false, false);
+                AddHtml(22, 22, 294, 20, Color($"{totalVotes} total", LabelColor32), false, false);
                 AddButton(287, 23, 0x2622, 0x2623, 2, GumpButtonType.Reply, 0);
             }
 
@@ -486,12 +483,12 @@ namespace Server.Misc
 
         public string Center(string text)
         {
-            return string.Format("<CENTER>{0}</CENTER>", text);
+            return $"<CENTER>{text}</CENTER>";
         }
 
         public string Color(string text, int color)
         {
-            return string.Format("<BASEFONT COLOR=#{0:X6}>{1}</BASEFONT>", color, text);
+            return $"<BASEFONT COLOR=#{color:X6}>{text}</BASEFONT>";
         }
 
         public override void OnResponse(NetState sender, RelayInfo info)
@@ -501,7 +498,7 @@ namespace Server.Misc
                 ShardPoller poller = m_Polls.Dequeue();
 
                 if (poller != null)
-                    Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(poller.SendQueuedPoll_Callback), new object[] { m_From, m_Polls });
+                    Timer.DelayCall(TimeSpan.FromSeconds(1.0), poller.SendQueuedPoll_Callback, new object[] { m_From, m_Polls });
             }
 
             if (info.ButtonID == 1)
@@ -604,7 +601,7 @@ namespace Server.Misc
             if (m.Groups[1].Success)
             {
                 if (m.Groups[2].Success)
-                    return string.Format("<a href=\"{0}\">{1}</a>", m.Groups[1].Value, m.Groups[2].Value);
+                    return $"<a href=\"{m.Groups[1].Value}\">{m.Groups[2].Value}</a>";
             }
             else if (m.Groups[2].Success)
             {

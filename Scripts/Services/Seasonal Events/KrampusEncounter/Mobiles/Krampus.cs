@@ -349,9 +349,9 @@ namespace Server.Mobiles
                     {
                         int ordersComplete = 0;
 
-                        if (KrampusEvent.Instance.CompleteTable.ContainsKey(m))
+                        if (KrampusEvent.Instance.CompleteTable.TryGetValue(m, out int value))
                         {
-                            ordersComplete = KrampusEvent.Instance.CompleteTable[m];
+                            ordersComplete = value;
                         }
 
                         if (ordersComplete >= 3 || Utility.RandomMinMax(0, 8) <= ordersComplete)
@@ -364,7 +364,7 @@ namespace Server.Mobiles
                                     item = new KrampusCoinPurse(m.Karma);
                                     break;
                                 case 1:
-                                    item = new CardOfSemidar(Utility.RandomMinMax(0, 6));
+                                    item = new CardOfSemidar(CardOfSemidar.CardType.Krampus);
                                     break;
                                 case 2:
                                     item = new NiceTitleDeed();

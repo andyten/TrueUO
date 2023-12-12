@@ -5,13 +5,8 @@ namespace Server.Items
 {
     public class Focus
     {
-        private static readonly Dictionary<Mobile, FocusInfo> m_Table = new Dictionary<Mobile, FocusInfo>();
-        private const int DefaultDamageBonus = -40;
-
-        public static void Initialize()
-        {
-            EventSink.Login += OnLogin;
-        }
+        private static readonly Dictionary<Mobile, FocusInfo> _Table = new Dictionary<Mobile, FocusInfo>();
+        private const int _DefaultDamageBonus = -40;
 
         public class FocusInfo
         {
@@ -25,9 +20,9 @@ namespace Server.Items
             }
         }
 
-        public static void OnLogin(LoginEventArgs e)
+        public static void OnLogin(Mobile m)
         {
-            if (e.Mobile is PlayerMobile pm)
+            if (m is PlayerMobile pm)
             {
                 UpdateBuff(pm);
             }
@@ -44,36 +39,27 @@ namespace Server.Items
 
             if (item == null)
             {
-                if (m_Table.ContainsKey(from))
+                if (_Table.Remove(from))
                 {
-                    m_Table.Remove(from);
                     BuffInfo.RemoveBuff(from, BuffIcon.RageFocusingBuff);
                 }
             }
             else if (item is BaseWeapon weapon && weapon.ExtendedWeaponAttributes.Focus > 0)
             {
-                if (m_Table.ContainsKey(from))
+                if (_Table.TryGetValue(from, out FocusInfo value))
                 {
-                    FocusInfo info = m_Table[from];
-
-                    BuffInfo.AddBuff(from, new BuffInfo(BuffIcon.RageFocusingBuff, 1151393, 1151394,
-                        string.Format("{0}\t{1}", info.Target == null ? "NONE" : info.Target.Name, info.DamageBonus)));
+                    BuffInfo.AddBuff(from, new BuffInfo(BuffIcon.RageFocusingBuff, 1151393, 1151394, $"{(value.Target == null ? "NONE" : value.Target.Name)}\t{value.DamageBonus}"));
                 }
 
-                m_Table[from] = new FocusInfo(target, DefaultDamageBonus);
+                _Table[from] = new FocusInfo(target, _DefaultDamageBonus);
             }
         }
 
         public static int GetBonus(Mobile from, Mobile target)
         {
-            if (m_Table.ContainsKey(from))
+            if (_Table.TryGetValue(from, out FocusInfo value) && value.Target == target)
             {
-                FocusInfo info = m_Table[from];
-
-                if (info.Target == target)
-                {
-                    return info.DamageBonus;
-                }
+                return value.DamageBonus;
             }
 
             return 0;
@@ -81,29 +67,35 @@ namespace Server.Items
 
         public static void OnHit(Mobile attacker, Mobile defender)
         {
-            if (m_Table.ContainsKey(attacker))
+            if (_Table.TryGetValue(attacker, out FocusInfo value))
             {
-                FocusInfo info = m_Table[attacker];
-
-                if (info.Target == null)
+                if (value.Target == null)
                 {
-                    info.DamageBonus -= 10;
+                    value.DamageBonus -= 10;
                 }
-                else if (info.Target == defender)
+                else if (value.Target == defender)
                 {
-                    if (info.DamageBonus < -40)
-                        info.DamageBonus += 10;
+                    if (value.DamageBonus < -40)
+                    {
+                        value.DamageBonus += 10;
+                    }
                     else
-                        info.DamageBonus += 8;
+                    {
+                        value.DamageBonus += 8;
+                    }
                 }
                 else
                 {
-                    if (info.DamageBonus >= -50)
-                        info.DamageBonus = DefaultDamageBonus;
+                    if (value.DamageBonus >= -50)
+                    {
+                        value.DamageBonus = _DefaultDamageBonus;
+                    }
                 }
 
-                if (info.Target != defender)
-                    info.Target = defender;
+                if (value.Target != defender)
+                {
+                    value.Target = defender;
+                }
 
                 UpdateBuff(attacker, defender);
             }

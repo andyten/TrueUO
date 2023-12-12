@@ -50,9 +50,9 @@ namespace Server.Spells.Necromancy
 
                 ExpireTimer t = null;
 
-                if (m_Table.ContainsKey(Caster))
+                if (m_Table.TryGetValue(Caster, out ExpireTimer value))
                 {
-                    t = m_Table[Caster];
+                    t = value;
                 }
 
                 t?.Stop();
@@ -82,17 +82,13 @@ namespace Server.Spells.Necromancy
             {
                 Weapon = weapon;
                 Owner = owner;
-                Priority = TimerPriority.OneSecond;
             }
 
             protected override void OnTick()
             {
                 Effects.PlaySound(Weapon.GetWorldLocation(), Weapon.Map, 0xFA);
 
-                if (m_Table.ContainsKey(Owner))
-                {
-                    m_Table.Remove(Owner);
-                }
+                m_Table.Remove(Owner);
             }
         }
 
@@ -104,7 +100,6 @@ namespace Server.Spells.Necromancy
                 : base(TimeSpan.FromSeconds(0.75))
             {
                 m_Mobile = m;
-                Priority = TimerPriority.FiftyMS;
             }
 
             protected override void OnTick()

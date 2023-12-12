@@ -5,7 +5,6 @@ using System.Collections.Generic;
 
 namespace Server.Engines.BulkOrders
 {
-    [TypeAlias("Scripts.Engines.BulkOrders.SmallBOD")]
     public abstract class SmallBOD : Item, IBOD
     {
         public abstract BODType BODType { get; }
@@ -189,14 +188,13 @@ namespace Server.Engines.BulkOrders
                 list.Add(SmallBODGump.GetMaterialNumberFor(m_Material)); // All items must be made with x material.
 
             list.Add(1060656, m_AmountMax.ToString()); // amount to make: ~1_val~
-            list.Add(1060658, "#{0}\t{1}", m_Number, m_AmountCur); // ~1_val~: ~2_val~
+            list.Add(1060658, $"#{m_Number}\t{m_AmountCur}"); // ~1_val~: ~2_val~
         }
 
         public override void OnDoubleClick(Mobile from)
         {
             if (IsChildOf(from.Backpack) || InSecureTrade || RootParent is PlayerVendor)
             {
-                EventSink.InvokeBODUsed(new BODUsedEventArgs(from, this));
                 from.SendGump(new SmallBODGump(from, this));
             }
             else
@@ -234,22 +232,6 @@ namespace Server.Engines.BulkOrders
             reward = null;
             gold = ComputeGold();
             fame = ComputeFame();
-
-            if (!BulkOrderSystem.NewSystemEnabled)
-            {
-                List<Item> rewards = ComputeRewards(false);
-
-                if (rewards.Count > 0)
-                {
-                    reward = rewards[Utility.Random(rewards.Count)];
-
-                    for (int i = 0; i < rewards.Count; ++i)
-                    {
-                        if (rewards[i] != reward)
-                            rewards[i].Delete();
-                    }
-                }
-            }
         }
 
         public virtual bool CheckType(Item item)

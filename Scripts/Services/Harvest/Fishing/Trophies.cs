@@ -360,10 +360,7 @@ namespace Server.Items
                 {
                     from.AddToBackpack(new FishTrophyDeed(m_FishWeight, m_Fisher, m_DateCaught, info.DeedNumber, info.AddonNumber, info.NorthID));
 
-                    if (house.Addons.ContainsKey(this))
-                    {
-                        house.Addons.Remove(this);
-                    }
+                    house.Addons.Remove(this);
 
                     Delete();
                 }
@@ -417,7 +414,7 @@ namespace Server.Items
             {
                 list.Add(1070858, trophy.FishWeight.ToString());
                 list.Add(1070857, trophy.Fisher != null ? trophy.Fisher.Name : "Unknown");
-                list.Add(string.Format("[{0}]", trophy.DateCaught.ToShortDateString()));
+                list.Add($"[{trophy.DateCaught.ToShortDateString()}]");
             }
         }
 

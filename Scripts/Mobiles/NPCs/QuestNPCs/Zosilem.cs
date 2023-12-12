@@ -23,7 +23,7 @@ namespace Server.Engines.Quests
         {
         }
 
-        public override Type[] Quests => new Type[] { };
+        public override Type[] Quests => Array.Empty<Type>();
 
         #region Bulk Orders
         public override BODType BODType => BODType.Alchemy;
@@ -35,7 +35,7 @@ namespace Server.Engines.Quests
 
         public override bool SupportsBulkOrders(Mobile from)
         {
-            return BulkOrderSystem.NewSystemEnabled && from is PlayerMobile && from.Skills[SkillName.Alchemy].Base > 0;
+            return from is PlayerMobile && from.Skills[SkillName.Alchemy].Base > 0;
         }
 
         public override void OnSuccessfulBulkOrderReceive(Mobile from)

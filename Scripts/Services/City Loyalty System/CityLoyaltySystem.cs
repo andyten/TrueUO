@@ -647,9 +647,9 @@ namespace Server.Engines.CityLoyalty
 
         public bool CanAdd(Mobile from)
         {
-            if (CitizenWait.ContainsKey(from))
+            if (CitizenWait.TryGetValue(from, out DateTime value))
             {
-                if (CitizenWait[from] < DateTime.UtcNow)
+                if (value < DateTime.UtcNow)
                 {
                     RemoveWaitTime(from);
                 }
@@ -664,9 +664,9 @@ namespace Server.Engines.CityLoyalty
 
         public int NextJoin(Mobile from)
         {
-            if (CitizenWait.ContainsKey(from))
+            if (CitizenWait.TryGetValue(from, out DateTime value))
             {
-                return (int)(CitizenWait[from] - DateTime.UtcNow).TotalDays;
+                return (int)(value - DateTime.UtcNow).TotalDays;
             }
 
             return 0;
@@ -674,15 +674,11 @@ namespace Server.Engines.CityLoyalty
 
         public void RemoveWaitTime(Mobile from)
         {
-            if (CitizenWait.ContainsKey(from))
-            {
-                CitizenWait.Remove(from);
-            }
+            CitizenWait.Remove(from);
         }
 
         public static void Initialize()
         {
-            EventSink.Login += OnLogin;
             Timer.DelayCall(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), OnTick);
 
             CommandSystem.Register("ElectionStartTime", AccessLevel.Administrator, e => Gumps.BaseGump.SendGump(new ElectionStartTimeGump(e.Mobile as PlayerMobile)));
@@ -724,14 +720,14 @@ namespace Server.Engines.CityLoyalty
             return false;
         }
 
-        public static void OnLogin(LoginEventArgs e)
+        public static void OnLogin(Mobile m)
         {
             if (!Enabled)
             {
                 return;
             }
 
-            if (!(e.Mobile is PlayerMobile pm))
+            if (!(m is PlayerMobile pm))
             {
                 return;
             }

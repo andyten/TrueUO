@@ -288,7 +288,7 @@ namespace Server.Spells
 
         private static SpecialMoveContext GetContext(Mobile m)
         {
-            return (m_PlayersTable.ContainsKey(m) ? m_PlayersTable[m] : null);
+            return m_PlayersTable.TryGetValue(m, out SpecialMoveContext value) ? value : null;
         }
 
         public static bool GetContext(Mobile m, Type type)
@@ -310,8 +310,6 @@ namespace Server.Spells
                 : base(TimeSpan.FromSeconds(3.0))
             {
                 m_Mobile = from;
-
-                Priority = TimerPriority.TwentyFiveMS;
             }
 
             protected override void OnTick()

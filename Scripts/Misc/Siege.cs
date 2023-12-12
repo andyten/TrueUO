@@ -33,8 +33,6 @@ namespace Server
             if (SiegeShard)
             {
                 EventSink.AfterWorldSave += OnAfterSave;
-                EventSink.Login += OnLogin;
-
                 EventSink.WorldSave += OnSave;
                 EventSink.WorldLoad += OnLoad;
             }
@@ -124,9 +122,9 @@ namespace Server
             CheckTime();
         }
 
-        public static void OnLogin(LoginEventArgs e)
+        public static void OnLogin(Mobile m)
         {
-            if (e.Mobile is PlayerMobile pm && pm.Map == Map.Trammel && pm.AccessLevel == AccessLevel.Player)
+            if (m is PlayerMobile pm && pm.Map == Map.Trammel && pm.AccessLevel == AccessLevel.Player)
             {
                 pm.MoveToWorld(new Point3D(989, 519, -50), Map.Malas);
                 pm.SendMessage("You have been removed from Trammel.");
@@ -158,9 +156,9 @@ namespace Server
 
                             int stats = 0;
 
-                            if (StatsTable.ContainsKey(kvp.Key))
+                            if (StatsTable.TryGetValue(kvp.Key, out int value))
                             {
-                                stats = StatsTable[kvp.Key];
+                                stats = value;
                             }
 
                             Console.WriteLine("Stats gained today: {0} of {1}", stats, StatsPerDay.ToString());

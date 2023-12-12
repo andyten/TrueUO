@@ -1,9 +1,6 @@
 using Server.Mobiles;
-using Server.Engines.RisingTide;
-
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Server.Items
 {
@@ -19,7 +16,22 @@ namespace Server.Items
         public Dictionary<BaseCreature, bool> Spawn { get; set; }
         public List<MannedCannon> Cannons { get; set; }
 
-        public bool CannonsOperational => Crew.Any(c => c.Alive && !c.Deleted);
+        public bool CannonsOperational
+        {
+            get
+            {
+                foreach (BaseCreature crewMember in Crew)
+                {
+                    if (crewMember.Alive && !crewMember.Deleted)
+                    {
+                        return true; // Return true as soon as we find a crew member who is alive and not deleted.
+                    }
+                }
+
+                return false; // Return false if no such crew member is found.
+            }
+        }
+
         public bool BeaconVulnerable => !CannonsOperational;
 
         public override BaseAddonDeed Deed => null;
@@ -565,25 +577,17 @@ namespace Server.Items
             }
         }
 
-        public static void Initialize()
+        public static void OnCreatureDeath(Mobile creature)
         {
-            if (RisingTideEvent.Instance.Running)
-            {
-                EventSink.CreatureDeath += OnCreatureDeath;
-            }
-        }
-
-        public static void OnCreatureDeath(CreatureDeathEventArgs e)
-        {
-            var killed = e.Creature as BaseCreature;
+            BaseCreature killed = creature as BaseCreature;
 
             bool any = false;
 
             if (Beacons != null)
             {
-                for (var index = 0; index < Beacons.Count; index++)
+                for (int index = 0; index < Beacons.Count; index++)
                 {
-                    var b = Beacons[index];
+                    PlunderBeaconAddon b = Beacons[index];
 
                     if (b.Spawn != null && b.Spawn.ContainsKey(killed))
                     {
@@ -599,7 +603,7 @@ namespace Server.Items
 
                 if (chance >= Utility.RandomDouble())
                 {
-                    var m = killed.RandomPlayerWithLootingRights();
+                    Mobile m = killed.RandomPlayerWithLootingRights();
 
                     if (m != null)
                     {

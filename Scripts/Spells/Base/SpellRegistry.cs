@@ -52,8 +52,10 @@ namespace Server.Spells
 
         public static int GetRegistryNumber(Type type)
         {
-            if (m_IDsFromTypes.ContainsKey(type))
-                return m_IDsFromTypes[type];
+            if (m_IDsFromTypes.TryGetValue(type, out int value))
+            {
+                return value;
+            }
 
             return -1;
         }
@@ -68,8 +70,7 @@ namespace Server.Spells
 
             m_Types[spellID] = type;
 
-            if (!m_IDsFromTypes.ContainsKey(type))
-                m_IDsFromTypes.Add(type, spellID);
+            m_IDsFromTypes.TryAdd(type, spellID);
 
             if (type.IsSubclassOf(typeof(SpecialMove)))
             {

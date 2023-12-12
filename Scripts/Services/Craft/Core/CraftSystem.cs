@@ -216,30 +216,6 @@ namespace Server.Engines.Craft
             return c;
         }
 
-        public void OnMade(Mobile m, CraftItem item)
-        {
-            CraftContext c = GetContext(m);
-
-            if (c != null)
-                c.OnMade(item);
-        }
-
-        public void OnRepair(Mobile m, ITool tool, Item deed, Item addon, IEntity e)
-        {
-            Item source;
-
-            if (tool is Item item)
-            {
-                source = item;
-            }
-            else
-            {
-                source = deed ?? addon;
-            }
-
-            EventSink.InvokeRepairItem(new RepairItemEventArgs(m, source, e));
-        }
-
         private void AddSystem(CraftSystem system)
         {
             if (Systems == null)
@@ -322,18 +298,6 @@ namespace Server.Engines.Craft
         {
             CraftItem craftItem = CraftItems.GetAt(index);
             craftItem.Mana = mana;
-        }
-
-        public void SetStamReq(int index, int stam)
-        {
-            CraftItem craftItem = CraftItems.GetAt(index);
-            craftItem.Stam = stam;
-        }
-
-        public void SetHitsReq(int index, int hits)
-        {
-            CraftItem craftItem = CraftItems.GetAt(index);
-            craftItem.Hits = hits;
         }
 
         public void SetUseAllRes(int index, bool useAll)

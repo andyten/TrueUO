@@ -9,10 +9,10 @@ namespace Server.Mobiles
     [CorpseName("a dragon turtle corpse")]
     public class DragonTurtle : BaseChampion
     {
-        public override Type[] UniqueList => new Type[] { };
-        public override Type[] SharedList => new Type[] { };
-        public override Type[] DecorativeList => new Type[] { };
-        public override MonsterStatuetteType[] StatueTypes => new MonsterStatuetteType[] { };
+        public override Type[] UniqueList => Array.Empty<Type>();
+        public override Type[] SharedList => Array.Empty<Type>();
+        public override Type[] DecorativeList => Array.Empty<Type>();
+        public override MonsterStatuetteType[] StatueTypes => Array.Empty<MonsterStatuetteType>();
 
         public override ChampionSkullType SkullType => ChampionSkullType.None;
 
@@ -244,10 +244,14 @@ namespace Server.Mobiles
             {
                 int hue;
 
-                if (_Affected != null && _Affected.ContainsKey(mob))
-                    hue = _Affected[mob];
+                if (_Affected != null && _Affected.TryGetValue(mob, out int value))
+                {
+                    hue = value;
+                }
                 else
+                {
                     hue = _Hues[Utility.Random(_Hues.Length)];
+                }
 
                 MovingParticles(mob, 13920, 10, 0, false, true, hue == 0 ? 0 : hue - 1, 5, 9502, 14120, 0, 0);
 
@@ -285,7 +289,7 @@ namespace Server.Mobiles
 
                     BuffInfo.RemoveBuff(m, BuffIcon.DragonTurtleDebuff);
 
-                    if (_Affected != null && _Affected.ContainsKey(m))
+                    if (_Affected != null)
                     {
                         _Affected.Remove(m);
                     }
