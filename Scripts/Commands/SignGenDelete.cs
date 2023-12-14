@@ -51,6 +51,7 @@ namespace Server.Commands
                 Map[] ilsh = { Map.Ilshenar };
                 Map[] malas = { Map.Malas };
                 Map[] tokuno = { Map.Tokuno };
+                Map[] termur = { Map.TerMur };
 
                 for (int i = 0; i < list.Count; ++i)
                 {
@@ -77,6 +78,9 @@ namespace Server.Commands
                         case 5:
                             maps = tokuno;
                             break; // Tokuno Islands
+                        case 6:
+                            maps = termur;
+                            break; // Ter Mur
                     }
 
                     for (int j = 0; maps != null && j < maps.Length; ++j)
