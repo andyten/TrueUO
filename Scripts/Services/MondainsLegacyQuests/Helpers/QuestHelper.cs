@@ -1,3 +1,4 @@
+using Server.Accounting;
 using Server.ContextMenus;
 using Server.Mobiles;
 using Server.Regions;
@@ -79,11 +80,12 @@ namespace Server.Engines.Quests
         public static bool CanOffer(PlayerMobile from, BaseQuest quest, object quester, bool message)
         {
             if (!quest.CanOffer())
+            {
                 return false;
+            }
 
             if (quest.ChainID != QuestChain.None)
             {
-                // if a player wants to start quest chain (already started) again (not osi)
                 if (from.Chains.ContainsKey(quest.ChainID) && FirstChainQuest(quest, quest.Quester))
                 {
                     return false;
@@ -96,15 +98,30 @@ namespace Server.Engines.Quests
                 }
             }
 
-            if (!Delayed(from, quest, quester, message))
+            // Check if the quest is in any character's log on the account if UseAccountWideQuestRestrictions is true
+            if (quest.UseAccountWideQuestRestrictions && IsQuestInAccountQuestLog(from, quest.GetType()))
+            {
+                if (message && quester is Mobile mobile)
+                {
+                    mobile.Say("I'm sorry, someone else on your account is already undertaking this quest."); 
+                }
+
                 return false;
+            }
+
+            if (!Delayed(from, quest, quester, message))
+            {
+                return false;
+            }
 
             for (int i = quest.Objectives.Count - 1; i >= 0; i--)
             {
                 Type type = quest.Objectives[i].Type();
 
                 if (type == null)
+                {
                     continue;
+                }
 
                 for (int j = from.Quests.Count - 1; j >= 0; j--)
                 {
@@ -115,7 +132,9 @@ namespace Server.Engines.Quests
                         BaseObjective obj = pQuest.Objectives[k];
 
                         if (type == obj.Type() && (quest.ChainID == QuestChain.None || quest.ChainID == pQuest.ChainID))
+                        {
                             return false;
+                        }
                     }
                 }
             }
@@ -125,39 +144,29 @@ namespace Server.Engines.Quests
 
         public static bool Delayed(PlayerMobile player, BaseQuest quest, object quester, bool message)
         {
-            QuestRestartInfo restartInfo = GetRestartInfo(player, quest.GetType());
-
-            if (restartInfo != null)
+            // Check for account-wide restart delay
+            if (quest.UseAccountWideQuestRestrictions && IsQuestInRestartDelayForAccount(player, quest.GetType(), out DateTime? earliestRestartTime))
             {
-                if (quest.DoneOnce)
+                if (message && quester is Mobile mobile && earliestRestartTime != null)
                 {
-                    if (message && quester is Mobile mobile)
-                    {
-                        mobile.Say(1075454); // I can not offer you the quest again.
-                    }
-
-                    return false;
+                    DisplayDelayMessage(mobile, player, earliestRestartTime.Value);
                 }
 
-                DateTime endTime = restartInfo.RestartTime;
+                return false;
+            }
+
+            // Check for character-specific restart delay
+            QuestRestartInfo charRestartInfo = GetRestartInfo(player, quest.GetType());
+
+            if (charRestartInfo != null)
+            {
+                DateTime endTime = charRestartInfo.RestartTime;
 
                 if (DateTime.UtcNow < endTime)
                 {
                     if (message && quester is Mobile mobile)
                     {
-                        TimeSpan ts = endTime - DateTime.UtcNow;
-                        string str;
-
-                        if (ts.TotalDays > 1)
-                            str = string.Format("I cannot offer this quest again for about {0} more days.", ts.TotalDays);
-                        else if (ts.TotalHours > 1)
-                            str = string.Format("I cannot offer this quest again for about {0} more hours.", ts.TotalHours);
-                        else if (ts.TotalMinutes > 1)
-                            str = string.Format("I cannot offer this quest again for about {0} more minutes.", ts.TotalMinutes);
-                        else
-                            str = "I can offer this quest again very soon.";
-
-                        mobile.SayTo(player, false, str);
+                        DisplayDelayMessage(mobile, player, endTime);
                     }
 
                     return false;
@@ -165,13 +174,104 @@ namespace Server.Engines.Quests
 
                 if (quest.RestartDelay > TimeSpan.Zero)
                 {
-                    player.DoneQuests.Remove(restartInfo);
+                    player.DoneQuests.Remove(charRestartInfo);
                 }
-
-                return true;
             }
 
             return true;
+        }
+
+        private static void DisplayDelayMessage(Mobile quester, PlayerMobile player, DateTime endTime)
+        {
+            if (quester != null)
+            {
+                TimeSpan ts = endTime - DateTime.UtcNow;
+                string str;
+
+                if (ts.TotalDays > 1)
+                {
+                    str = $"I cannot offer this quest again for about {(int)ts.TotalDays} more days.";
+                }
+                else if (ts.TotalHours > 1)
+                {
+                    str = $"I cannot offer this quest again for about {(int)ts.TotalHours} more hours.";
+                }
+                else if (ts.TotalMinutes > 1)
+                {
+                    str = $"I cannot offer this quest again for about {(int)ts.TotalMinutes} more minutes.";
+                }
+                else
+                {
+                    str = "I can offer this quest again very soon.";
+                }
+
+                quester.SayTo(player, false, str);
+            }
+        }
+
+        public static bool IsQuestInRestartDelayForAccount(PlayerMobile player, Type questType, out DateTime? earliestEndTime)
+        {
+            earliestEndTime = null;
+
+            // Get the account associated with the player
+            Account account = player.Account as Account;
+
+            if (account == null)
+            {
+                return false;
+            }
+
+            // Iterate through all characters in the account
+            for (int i = 0; i < account.Length; i++)
+            {
+                Mobile m = account[i];
+
+                if (m is PlayerMobile pm)
+                {
+                    QuestRestartInfo restartInfo = GetRestartInfo(pm, questType);
+
+                    if (restartInfo != null)
+                    {
+                        DateTime endTime = restartInfo.RestartTime;
+
+                        if (DateTime.UtcNow < endTime && (earliestEndTime == null || endTime < earliestEndTime))
+                        {
+                            earliestEndTime = endTime;
+                        }
+                    }
+                }
+            }
+
+            return earliestEndTime != null;
+        }
+
+        public static bool IsQuestInAccountQuestLog(PlayerMobile player, Type questType)
+        {
+            Account account = player.Account as Account;
+
+            if (account == null)
+            {
+                return false;
+            }
+
+            // Iterate through all characters in the account
+            for (int i = 0; i < account.Length; i++)
+            {
+                Mobile m = account[i];
+
+                if (m is PlayerMobile pm)
+                {
+                    foreach (BaseQuest quest in pm.Quests)
+                    {
+                        if (quest.GetType() == questType)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
         public static QuestRestartInfo GetRestartInfo(PlayerMobile pm, Type quest)
@@ -241,15 +341,15 @@ namespace Server.Engines.Quests
 
                         if (ts.Days > 0)
                         {
-                            player.SendLocalizedMessage(1158377, string.Format("{0}\t{1}", ts.Days.ToString(), "day[s]"));
+                            player.SendLocalizedMessage(1158377, $"{ts.Days}\tday[s]");
                         }
                         else if (ts.Hours > 0)
                         {
-                            player.SendLocalizedMessage(1158377, string.Format("{0}\t{1}", ts.Hours.ToString(), "hour[s]"));
+                            player.SendLocalizedMessage(1158377, $"{ts.Hours}\thour[s]");
                         }
                         else
                         {
-                            player.SendLocalizedMessage(1158377, string.Format("{0}\t{1}", ts.Minutes.ToString(), "minute[s]"));
+                            player.SendLocalizedMessage(1158377, $"{ts.Minutes}\tminute[s]");
                         }
 
                         return false;
@@ -897,27 +997,6 @@ namespace Server.Engines.Quests
             list.Add(new SelectQuestItem());
         }
 
-        public static bool FindCompletedQuest(PlayerMobile from, Type type, bool delete)
-        {
-            if (type == null)
-                return false;
-
-            for (int i = from.DoneQuests.Count - 1; i >= 0; i--)
-            {
-                QuestRestartInfo restartInfo = from.DoneQuests[i];
-
-                if (restartInfo.QuestType == type)
-                {
-                    if (delete)
-                        from.DoneQuests.RemoveAt(i);
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         public static bool HasQuest<T>(PlayerMobile from) where T : BaseQuest
         {
             return GetQuest(from, typeof(T)) != null;
@@ -984,7 +1063,9 @@ namespace Server.Engines.Quests
         public override void OnClick()
         {
             if (!Owner.From.Alive)
+            {
                 return;
+            }
 
             Owner.From.SendLocalizedMessage(1072352); // Target the item you wish to toggle Quest Item status on <ESC> to cancel
             Owner.From.BeginTarget(-1, false, TargetFlags.None, ToggleQuestItem_Callback);
@@ -999,13 +1080,19 @@ namespace Server.Engines.Quests
                     if (item.Parent != null && item.Parent == player.Backpack)
                     {
                         if (!QuestHelper.CheckItem(player, item))
+                        {
                             player.SendLocalizedMessage(1072355, null, 0x23); // That item does not match any of your quest criteria
+                        }
                     }
                     else
+                    {
                         player.SendLocalizedMessage(1074769); // An item must be in your backpack (and not in a container within) to be toggled as a quest item.
+                    }
                 }
                 else
+                {
                     player.SendLocalizedMessage(1074769); // An item must be in your backpack (and not in a container within) to be toggled as a quest item.
+                }
 
                 player.BeginTarget(-1, false, TargetFlags.None, ToggleQuestItem_Callback);
             }
