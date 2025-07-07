@@ -1,5 +1,6 @@
 using Server.Items;
 using Server.Mobiles;
+using Server.Spells;
 using Server.Spells.Necromancy;
 using Server.Spells.Ninjitsu;
 using System;
@@ -166,6 +167,7 @@ namespace Server.Mobiles
     public class Clone : BaseCreature
     {
         public override bool AlwaysAttackable => m_Caster is Travesty;
+        public override bool AlwaysMurderer => m_Caster is BaseCreature bc && bc.AlwaysMurderer;
 
         private Mobile m_Caster;
 
@@ -212,8 +214,8 @@ namespace Server.Mobiles
 
             TimeSpan duration = TimeSpan.FromSeconds(30 + caster.Skills.Ninjitsu.Fixed / 40);
 
+            new UnsummonTimer(this, duration).Start();
             SummonEnd = DateTime.UtcNow + duration;
-            TimerRegistry.Register<BaseCreature>("UnsummonTimer", this, duration, c => c.Delete());
 
             MirrorImage.AddClone(m_Caster);
 

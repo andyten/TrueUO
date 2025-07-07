@@ -3,7 +3,6 @@ using Server.Engines.Quests;
 using Server.Gumps;
 using Server.Items;
 using Server.Mobiles;
-using Server.Multis;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -278,7 +277,6 @@ namespace Server
                     BrigandsVersion4();
                     break;
                 case 3:
-                    FixCampSpawnersVersion3();
                     break;
                 case 2: // Nothing
                     break;
@@ -618,25 +616,6 @@ namespace Server
         {
             Replace("humanbrigand", "brigand", null);
             Replace("humanbrigandcamp", "brigandcamp", null);
-        }
-        #endregion
-
-        #region Version 3
-        private static void FixCampSpawnersVersion3()
-        {
-            ActionOnSpawner(typeof(BaseCamp), null, null, null, spawner =>
-            {
-                if (spawner is XmlSpawner xmlSpawner)
-                {
-                    xmlSpawner.MinDelay = TimeSpan.FromMinutes(5);
-                    xmlSpawner.MaxDelay = TimeSpan.FromMinutes(10);
-                }
-                else if (spawner is Spawner s)
-                {
-                    s.MinDelay = TimeSpan.FromMinutes(5);
-                    s.MaxDelay = TimeSpan.FromMinutes(10);
-                }
-            }, true);
         }
         #endregion
 

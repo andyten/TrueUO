@@ -6,7 +6,6 @@ using Server.Regions;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Server.Accounting;
 
 namespace Server.Multis
@@ -74,10 +73,12 @@ namespace Server.Multis
             return null;
         }
 
+        // Called After World.Load
         public static void Initialize()
         {
-            new UpdateAllTimer().Start();
-            EventSink.WorldSave += EventSink_WorldSave;
+            UpdateAllComponents();
+
+            EventSink.AfterWorldSave += EventSink_AfterWorldSave;
         }
 
         public static void UpdateAllComponents()
@@ -105,9 +106,9 @@ namespace Server.Multis
             toDelete.TrimExcess();
         }
 
-        private static void EventSink_WorldSave(WorldSaveEventArgs e)
+        private static void EventSink_AfterWorldSave(AfterWorldSaveEventArgs e)
         {
-            new UpdateAllTimer().Start();
+            UpdateAllComponents();
         }
 
         public static void OnDisconnected(Mobile m)
@@ -267,10 +268,6 @@ namespace Server.Multis
         #endregion
 
         #region Properties
-
-        [CommandProperty(AccessLevel.GameMaster)]
-        public bool Anchored { get; set; }
-
         [CommandProperty(AccessLevel.GameMaster)]
         public BoatCourse BoatCourse { get; set; }
 
@@ -354,9 +351,33 @@ namespace Server.Multis
         [CommandProperty(AccessLevel.GameMaster)]
         public Direction Facing { get => m_Facing; set => SetFacing(value); }
 
-        public IEnumerable<Item> ItemsOnBoard => GetEntitiesOnBoard().OfType<Item>();
+        public IEnumerable<Item> ItemsOnBoard
+        {
+            get
+            {
+                foreach (IEntity entity in GetEntitiesOnBoard())
+                {
+                    if (entity is Item item)
+                    {
+                        yield return item;
+                    }
+                }
+            }
+        }
 
-        public IEnumerable<Mobile> MobilesOnBoard => GetEntitiesOnBoard().OfType<Mobile>();
+        public IEnumerable<Mobile> MobilesOnBoard
+        {
+            get
+            {
+                foreach (IEntity entity in GetEntitiesOnBoard())
+                {
+                    if (entity is Mobile mobile)
+                    {
+                        yield return mobile;
+                    }
+                }
+            }
+        }
 
         public override bool HandlesOnSpeech => true;
 
@@ -390,8 +411,24 @@ namespace Server.Multis
         [CommandProperty(AccessLevel.GameMaster)]
         public BoatOrder Order { get; set; }
 
-        public int PlayerCount => MobilesOnBoard.Count(m => m is PlayerMobile);
+        public int PlayerCount
+        {
+            get
+            {
+                int count = 0;
 
+                foreach (Mobile mobile in MobilesOnBoard)
+                {
+                    if (mobile is PlayerMobile)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+        
         [CommandProperty(AccessLevel.GameMaster)]
         public Mobile Pilot { get; set; }
 
@@ -574,7 +611,6 @@ namespace Server.Multis
             DoesDecay = true;
             Facing = direction;
             Layer = Layer.Mount;
-            Anchored = false;
 
             m_Hits = MaxHits;
             m_DamageTaken = DamageLevel.Pristine;
@@ -842,8 +878,7 @@ namespace Server.Multis
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-
-            writer.Write(5);
+            writer.Write(6);
 
             writer.Write(m_Hits);
             writer.Write((int)m_DamageTaken);
@@ -861,7 +896,6 @@ namespace Server.Multis
             writer.Write(VirtualMount);
             writer.Write(DoesDecay);
 
-            // version 3
             writer.Write(MapItem);
             writer.Write(NextNavPoint);
 
@@ -879,7 +913,6 @@ namespace Server.Multis
                 writer.Write(item);
 
             writer.Write(Hold);
-            writer.Write(Anchored);
             writer.Write(m_ShipName);
 
             CheckDecay();
@@ -892,14 +925,17 @@ namespace Server.Multis
 
             switch (version)
             {
+                case 6:
                 case 5:
+                    {
+                        goto case 0;
+                    }
+                case 0:
                     {
                         m_Hits = reader.ReadInt();
                         m_DamageTaken = (DamageLevel)reader.ReadInt();
-                        goto case 4;
-                    }
-                case 4:
-                    {
+
+                        // Do we have a boat course check
                         if (reader.ReadInt() == 1)
                         {
                             BoatCourse = new BoatCourse(reader)
@@ -912,43 +948,14 @@ namespace Server.Multis
                         BoatItem = reader.ReadItem() as BaseDockedBoat;
                         VirtualMount = reader.ReadItem() as BoatMountItem;
                         DoesDecay = reader.ReadBool();
-                        goto case 3;
-                    }
-                case 3:
-                    {
+
                         MapItem = (MapItem)reader.ReadItem();
                         NextNavPoint = reader.ReadInt();
 
-                        goto case 2;
-                    }
-                case 2:
-                    {
                         m_Facing = (Direction)reader.ReadInt();
 
-                        goto case 1;
-                    }
-                case 1:
-                    {
                         m_DecayTime = reader.ReadDeltaTime();
 
-                        goto case 0;
-                    }
-                case 0:
-                    {
-                        if (version < 3)
-                            NextNavPoint = -1;
-
-                        if (version < 2)
-                        {
-                            if (ItemID == NorthID)
-                                m_Facing = Direction.North;
-                            else if (ItemID == SouthID)
-                                m_Facing = Direction.South;
-                            else if (ItemID == EastID)
-                                m_Facing = Direction.East;
-                            else if (ItemID == WestID)
-                                m_Facing = Direction.West;
-                        }
 
                         Owner = reader.ReadMobile();
                         PPlank = reader.ReadItem() as Plank;
@@ -960,10 +967,14 @@ namespace Server.Multis
                             TillerMan = reader.ReadItem();
 
                         Hold = reader.ReadItem() as Hold;
-                        Anchored = reader.ReadBool();
-                        m_ShipName = reader.ReadString();
 
-                        Anchored = false; // No more anchors[High Seas]
+                        // Removed Anchors. No longer used/in-game post High-Seas
+                        if (version < 6)
+                        {
+                            reader.ReadBool();
+                        }
+                        
+                        m_ShipName = reader.ReadString();
 
                         break;
                     }
@@ -971,13 +982,10 @@ namespace Server.Multis
 
             Boats.Add(this);
 
-            if (version == 4)
-            {
-                Timer.DelayCall(() => Hits = MaxHits);
-            }
-
             if (IsRowBoat)
+            {
                 Timer.DelayCall(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5), RowBoat_Tick_Callback);
+            }
         }
 
         #endregion
@@ -3225,7 +3233,17 @@ namespace Server.Multis
 
         public void RowBoat_Tick_Callback()
         {
-            if (!MobilesOnBoard.Any())
+            bool hasMobiles = false;
+
+            // Manually check if there are any mobiles on board
+            foreach (Mobile unused in MobilesOnBoard)
+            {
+                hasMobiles = true;
+                break; // Exit the loop early if a mobile is found
+            }
+
+            // If no mobiles were found, delete the rowboat
+            if (!hasMobiles)
             {
                 Delete();
             }
@@ -3333,19 +3351,6 @@ namespace Server.Multis
                 BoatTrackingArrow.StartTracking(from);
             else if (speech.ToLower().IndexOf("stop") >= 0)
                 BoatTrackingArrow.StopTracking(from);
-        }
-
-        public class UpdateAllTimer : Timer
-        {
-            public UpdateAllTimer()
-                : base(TimeSpan.FromSeconds(1.0))
-            {
-            }
-
-            protected override void OnTick()
-            {
-                UpdateAllComponents();
-            }
         }
     }
 

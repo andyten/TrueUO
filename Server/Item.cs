@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Threading;
 using Server.ContextMenus;
 using Server.Items;
 using Server.Network;
@@ -1170,21 +1171,18 @@ namespace Server
 		/// </summary>
 		public virtual void AddLootTypeProperty(ObjectPropertyList list)
 		{
-			if (DisplayLootType)
-			{
-				if (m_LootType == LootType.Blessed)
-				{
-					list.Add(1038021); // blessed
-				}
-				else if (m_LootType == LootType.Cursed)
-				{
-					list.Add(1049643); // cursed
-				}
-				else if (Insured)
-				{
-					list.Add(1061682); // <b>insured</b>
-				}
-			}
+			if (m_LootType == LootType.Blessed)
+            {
+                list.Add(1038021); // blessed
+            }
+            else if (m_LootType == LootType.Cursed)
+            {
+                list.Add(1049643); // cursed
+            }
+            else if (Insured)
+            {
+                list.Add(1061682); // <b>insured</b>
+            }
 		}
 
 		/// <summary>
@@ -1870,10 +1868,7 @@ namespace Server
 				{
 					m_LootType = value;
 
-					if (DisplayLootType)
-					{
-						InvalidateProperties();
-					}
+					InvalidateProperties();
 				}
 			}
 		}
@@ -3465,25 +3460,23 @@ namespace Server
 			OnItemAdded(item);
 		}
 
-		private static readonly List<Item> m_DeltaQueue = new List<Item>();
+        private static event Action DeltaQueue;
 
 		public void Delta(ItemDelta flags)
 		{
-			if (m_Map == null || m_Map == Map.Internal)
+            if (Deleted || m_Map == null || m_Map == Map.Internal)
 			{
 				return;
 			}
 
 			m_DeltaFlags |= flags;
 
-			if (!GetFlag(ImplFlag.InQueue))
+            if (!GetFlag(ImplFlag.InQueue) && m_DeltaFlags != ItemDelta.None)
 			{
 				SetFlag(ImplFlag.InQueue, true);
 
-				m_DeltaQueue.Add(this);
+                DeltaQueue += ProcessDelta;
 			}
-
-			Core.Set();
 		}
 
 		public void RemDelta(ItemDelta flags)
@@ -3494,7 +3487,7 @@ namespace Server
 			{
 				SetFlag(ImplFlag.InQueue, false);
 
-				m_DeltaQueue.Remove(this);
+                DeltaQueue -= ProcessDelta;
 			}
 		}
 
@@ -3511,7 +3504,7 @@ namespace Server
 
 			Map map = m_Map;
 
-			if (map != null && !Deleted)
+            if (map != null && !Deleted && flags != ItemDelta.None)
 			{
 				bool sendOPLUpdate = (flags & ItemDelta.Properties) != 0;
 
@@ -3726,29 +3719,11 @@ namespace Server
 			}
 		}
 
-		private static bool _Processing;
-
 		public static void ProcessDeltaQueue()
 		{
-			if (_Processing)
-			{
-				return;
-			}
+            Action delta = Interlocked.Exchange(ref DeltaQueue, null);
 
-			_Processing = true;
-
-			int i = m_DeltaQueue.Count;
-
-			while (--i >= 0)
-			{
-				if (i < m_DeltaQueue.Count && m_DeltaQueue[i] != null)
-				{
-                    m_DeltaQueue[i].ProcessDelta();
-                    m_DeltaQueue.RemoveAt(i);
-                }
-			}
-
-			_Processing = false;
+            delta?.Invoke();
 		}
 
 		public virtual void OnDelete()
@@ -5235,7 +5210,6 @@ namespace Server
         }
 
 		public virtual bool CanTarget => true;
-		public virtual bool DisplayLootType => true;
 
 		public virtual void OnAosSingleClick(Mobile from)
 		{

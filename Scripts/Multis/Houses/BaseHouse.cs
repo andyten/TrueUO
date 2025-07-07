@@ -12,7 +12,6 @@ using Server.Regions;
 using Server.Targeting;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Server.Multis
 {
@@ -213,28 +212,40 @@ namespace Server.Multis
 
         public virtual void KillVendors()
         {
-            PlayerVendors.OfType<PlayerVendor>().IterateReverse(o => o.Destroy(true));
+            List<PlayerVendor> playerVendorsList = new List<PlayerVendor>();
+            foreach (Mobile vendor in PlayerVendors)
+            {
+                if (vendor is PlayerVendor pv)
+                {
+                    playerVendorsList.Add(pv);
+                }
+            }
 
-            PlayerBarkeepers.IterateReverse(o => o.Delete());
+            // Use custom IterateReverse method to apply the action in reverse order
+            playerVendorsList.IterateReverse(vendor => vendor.Destroy(true));
+            PlayerBarkeepers.IterateReverse(barKeep => barKeep.Delete());
         }
 
-        public virtual void Decay_Sandbox()
+        private void Decay_Sandbox()
         {
             if (Deleted)
+            {
                 return;
+            }
 
-            new TempNoHousingRegion(this, null);
+            _ = new TempNoHousingRegion(this, null);
 
             Rectangle3D[] recs = m_Region.Area;
             Map map = Map;
 
+            KillVendors();
+
             Timer.DelayCall(TimeSpan.FromMilliseconds(250), () => OnAfterDecay(recs, map));
 
-            KillVendors();
             Delete();
         }
 
-        public virtual void OnAfterDecay(Rectangle3D[] recs, Map map)
+        private void OnAfterDecay(Rectangle3D[] recs, Map map)
         {
             if (map != null && recs.Length > 0)
             {
@@ -250,7 +261,7 @@ namespace Server.Multis
 
                     foreach (Item item in eable)
                     {
-                        if (item.RootParent == null && item.Movable && item.LootType != LootType.Blessed)
+                        if (item.RootParent == null && item.Movable && item.LootType != LootType.Blessed && !item.Insured)
                         {
                             list.Add(item);
                         }
@@ -3215,22 +3226,35 @@ namespace Server.Multis
 
             writer.Write(MaxLockDowns);
             writer.Write(MaxSecures);
+        }
 
-            // Items in locked down containers that aren't locked down themselves must decay!
-            foreach (KeyValuePair<Item, Mobile> kvp in LockDowns)
+        public static void Initialize()
+        {
+            EventSink.AfterWorldSave += AfterWorldSave;
+        }
+
+        private static void AfterWorldSave(AfterWorldSaveEventArgs e)
+        {
+            foreach (BaseHouse house in AllHouses)
             {
-                Item item = kvp.Key;
-
-                if (item is Container cont && CheckContentsDecay(cont))
+                // Items in locked down containers that aren't locked down themselves must decay!
+                foreach (KeyValuePair<Item, Mobile> kvp in house.LockDowns)
                 {
-                    List<Item> children = cont.Items;
+                    Item item = kvp.Key;
 
-                    for (int j = 0; j < children.Count; ++j)
+                    if (item is Container cont && house.CheckContentsDecay(cont))
                     {
-                        Item child = children[j];
+                        List<Item> children = cont.Items;
 
-                        if (child.Decays && !child.IsLockedDown && !child.IsSecure && child.LastMoved + child.DecayTime <= DateTime.UtcNow)
-                            Timer.DelayCall(TimeSpan.Zero, child.Delete);
+                        for (int j = 0; j < children.Count; ++j)
+                        {
+                            Item child = children[j];
+
+                            if (child.Decays && !child.IsLockedDown && !child.IsSecure && child.LastMoved + child.DecayTime <= DateTime.UtcNow)
+                            {
+                                child.Delete();
+                            }
+                        }
                     }
                 }
             }

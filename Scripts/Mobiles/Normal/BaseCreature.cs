@@ -20,7 +20,6 @@ using Server.Spells.Spellweaving;
 using Server.Targeting;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Server.Engines.Points;
 using Server.Engines.Quests;
@@ -2599,7 +2598,7 @@ namespace Server.Mobiles
                 if (m_bSummoned)
                 {
                     m_SummonEnd = reader.ReadDeltaTime();
-                    TimerRegistry.Register("UnsummonTimer", this, m_SummonEnd - DateTime.UtcNow, c => c.Delete());
+                    new UnsummonTimer(this, m_SummonEnd - DateTime.UtcNow).Start();
                 }
 
                 m_iControlSlots = reader.ReadInt();
@@ -3494,7 +3493,12 @@ namespace Server.Mobiles
             set
             {
                 m_Movement = value;
-                m_AI.OnCurrentMovementChanged();
+
+                if (m_AI != null)
+                {
+                    m_AI.OnCurrentMovementChanged();
+                }
+
                 InvalidateProperties();
             }
         }
@@ -3506,7 +3510,12 @@ namespace Server.Mobiles
             set
             {
                 m_GuardMode = value;
-                m_AI.OnCurrentGuardChanged();
+
+                if (m_AI != null)
+                {
+                    m_AI.OnCurrentGuardChanged();
+                }
+
                 InvalidateProperties();
 
                 if (m_ControlMaster != null)
@@ -6129,8 +6138,8 @@ namespace Server.Mobiles
             creature.SetHits(
                 (int)Math.Floor(creature.HitsMax * (1 + ArcaneEmpowermentSpell.GetSpellBonus(caster, false) / 100.0)));
 
+            new UnsummonTimer(creature, duration).Start();
             creature.m_SummonEnd = DateTime.UtcNow + duration;
-            TimerRegistry.Register("UnsummonTimer", creature, duration, c => c.Delete());
 
             creature.MoveToWorld(p, caster.Map);
 
@@ -6562,11 +6571,18 @@ namespace Server.Mobiles
                 return null;
             }
 
-            if (m == null || m == this || !CanBeHarmful(m, false) || creaturesOnly && !(m is BaseCreature))
+            if (m == null || m == this || !CanBeHarmful(m, false) || (creaturesOnly && m is not BaseCreature))
             {
                 List<AggressorInfo> list = new List<AggressorInfo>();
 
-                list.AddRange(Aggressors.Where(info => !creaturesOnly || info.Attacker is PlayerMobile));
+                // Manually filter aggressors based on the creaturesOnly flag
+                foreach (AggressorInfo info in Aggressors)
+                {
+                    if (!creaturesOnly || info.Attacker is PlayerMobile)
+                    {
+                        list.Add(info);
+                    }
+                }
 
                 if (list.Count > 0)
                 {
@@ -6577,7 +6593,7 @@ namespace Server.Mobiles
                     m = null;
                 }
 
-                ColUtility.Free(list);
+                ColUtility.Free(list); 
             }
 
             return m;

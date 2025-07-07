@@ -1,6 +1,6 @@
 /*************************************************************************
  * ModernUO                                                              *
- * Copyright 2019-2023 - ModernUO Development Team                       *
+ * Copyright 2019-2024 - ModernUO Development Team                       *
  * Email: hi@modernuo.com                                                *
  * File: Timer.TimerWheel.cs                                             *
  *                                                                       *
@@ -15,8 +15,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Server;
 
@@ -32,9 +34,9 @@ public partial class Timer
     private const int _tickRate = 1 << _tickRatePowerOf2; // 8ms
     private const long _maxDuration = (long)_tickRate << (_ringSizePowerOf2 * _ringLayers - 1);
 
-    private static Timer[][] _rings = new Timer[_ringLayers][];
-    private static int[] _ringIndexes = new int[_ringLayers];
-    private static Timer[] _executingRings = new Timer[_ringLayers];
+    private static readonly Timer[][] _rings = new Timer[_ringLayers][];
+    private static readonly int[] _ringIndexes = new int[_ringLayers];
+    private static readonly Timer[] _executingRings = new Timer[_ringLayers];
 
     private static long _lastTickTurned = -1;
 
@@ -51,6 +53,7 @@ public partial class Timer
 
     public static void Slice(long tickCount)
     {
+        // Seemed to fix an issue on TrueUO with world saves and timers
         if (World.Saving || World.Loading)
         {
             return;
@@ -122,11 +125,6 @@ public partial class Timer
                         Execute(timer);
                     }
                 }
-
-                if (!timer.Running)
-                {
-                    timer.OnDetach();
-                }
             }
 #if DEBUG_TIMERS
             if (executionCount > _chainExecutionThreshold)
@@ -143,35 +141,53 @@ public partial class Timer
 
     private static void Execute(Timer timer)
     {
-        var finished = timer.Count != 0 && ++timer.Index >= timer.Count;
+        var finished = timer.Count != 0 && timer.Index + 1 >= timer.Count;
+
+        // Stop the timer from running so that way if Start() is called in OnTick, the timer will be started.
+        if (finished)
+        {
+            timer.InternalStop();
+            timer.Version++;
+        }
 
         var version = timer.Version;
 
-        var prof = timer.GetProfile();
-        prof?.Start();
         timer.OnTick();
-        prof?.Finish();
 
-        // If the timer has not been stopped, and it has not been altered (restarted, returned etc)
-        if (timer.Running && timer.Version == version)
+        // Starting doesn't change the timer version, so we need to check if it's finished and if it's still running.
+        if (timer.Version != version || finished && timer.Running)
         {
-            if (finished)
-            {
-                timer.Stop();
-            }
-            else
-            {
-                timer.Delay = timer.Interval;
-                timer.Next = DateTime.UtcNow + timer.Interval;
-                AddTimer(timer, (long)timer.Delay.TotalMilliseconds);
-            }
+            return;
         }
+
+        if (!finished)
+        {
+            AddTimer(timer, (long)timer.Interval.TotalMilliseconds);
+        }
+        else
+        {
+            // Already stopped and detached, now run OnDetach
+            timer.OnDetach();
+        }
+
+        timer.Index++;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static long RoundTicksToNextPowerOfTwo(long value)
+    {
+        if (value <= 0)
+        {
+            return _tickRate;
+        }
+
+        const long mask = _tickRate - 1;
+        return (value + mask) & ~mask;
     }
 
     private static void AddTimer(Timer timer, long delay)
     {
-        var originalDelay = delay;
-        delay = Math.Max(0, delay);
+        var actualDelay = delay;
 
         var resolutionPowerOf2 = _tickRatePowerOf2;
         for (var i = 0; i < _ringLayers; i++)
@@ -202,10 +218,19 @@ public partial class Timer
                     // In this case, we will just throw it on the last slot.
                     if (lastRing && slot > _ringSize)
                     {
+                        logger.Error(
+                            $"Timer {{Timer}} has a duration of {{Duration}}ms, more than max capacity of {{MaxDuration}}ms.{Environment.NewLine}{{StackTrace}}",
+                            timer.GetType(),
+                            actualDelay,
+                            _maxDuration,
+                            new StackTrace()
+                        );
+
                         slot = Math.Max(0, ringIndex - 1);
                     }
                 }
 
+                timer.Next = DateTime.UtcNow + timer.Delay;
                 timer.Attach(_rings[i][slot]);
                 timer._remaining = remaining;
                 timer._ring = i;
@@ -217,14 +242,15 @@ public partial class Timer
             }
 
             // The remaining amount until we turn this ring
-            delay -= resolution * (_ringSize - _ringIndexes[i]);
+            var offsetDelay = resolution * (_ringSize - _ringIndexes[i]);
+            delay -= offsetDelay;
             resolutionPowerOf2 = nextResolutionPowerOf2;
         }
     }
 
     public static void DumpInfo(TextWriter tw)
     {
-        tw.WriteLine($"Date: {DateTime.UtcNow.ToLocalTime()}{Environment.NewLine}");
+        tw.WriteLine($"Date: {DateTime.Now.ToLocalTime()}{Environment.NewLine}");
 
         var total = 0.0;
         var hash = new Dictionary<string, int>();

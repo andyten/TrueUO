@@ -1,6 +1,5 @@
 using Server.Items;
 using Server.Mobiles;
-using Server.Multis;
 
 namespace Server.Engines.MyrmidexInvasion
 {
@@ -159,12 +158,6 @@ namespace Server.Engines.MyrmidexInvasion
 
             allegianceIdol = new AllegianceIdol(Allegiance.Myrmidex);
             allegianceIdol.MoveToWorld(new Point3D(176, 1813, 91), map);
-
-            _ = new HealerCamp
-            {
-                Map = Map.TerMur,
-                Location = new Point3D(262, 1716, 80)
-            };
 
             GeoffreyCampAddon gcamp = new GeoffreyCampAddon();
             gcamp.MoveToWorld(new Point3D(264, 1732, 80), Map.TerMur);

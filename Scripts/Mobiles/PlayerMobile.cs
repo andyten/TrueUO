@@ -1,27 +1,39 @@
-#region References
+using System;
+using System.Collections.Generic;
 using Server.Accounting;
 using Server.ContextMenus;
 using Server.Engines.ArenaSystem;
 using Server.Engines.BulkOrders;
 using Server.Engines.CannedEvil;
+using Server.Engines.Chat;
 using Server.Engines.CityLoyalty;
 using Server.Engines.Craft;
+using Server.Engines.Despise;
+using Server.Engines.Doom;
+using Server.Engines.Events;
 using Server.Engines.Help;
+using Server.Engines.InstancedPeerless;
+using Server.Engines.NewMagincia;
 using Server.Engines.PartySystem;
+using Server.Engines.Plants;
 using Server.Engines.Points;
 using Server.Engines.Quests;
 using Server.Engines.Shadowguard;
 using Server.Engines.SphynxFortune;
 using Server.Engines.VendorSearching;
+using Server.Engines.VeteranRewards;
 using Server.Engines.VoidPool;
 using Server.Engines.VvV;
+using Server.Events.Halloween;
 using Server.Guilds;
 using Server.Gumps;
 using Server.Items;
 using Server.Misc;
 using Server.Multis;
 using Server.Network;
+using Server.Network.Packets;
 using Server.Regions;
+using Server.Services.TownCryer;
 using Server.Services.Virtues;
 using Server.SkillHandlers;
 using Server.Spells;
@@ -34,29 +46,13 @@ using Server.Spells.Ninjitsu;
 using Server.Spells.Seventh;
 using Server.Spells.Sixth;
 using Server.Spells.SkillMasteries;
-using Server.Targeting;
-
-using System;
-using System.Collections.Generic;
-using Server.Engines.Chat;
-using Server.Engines.Despise;
-using Server.Engines.Doom;
-using Server.Engines.Events;
-using Server.Engines.InstancedPeerless;
-using Server.Engines.NewMagincia;
-using Server.Engines.Plants;
-using Server.Engines.VeteranRewards;
-using Server.Services.TownCryer;
 using Server.Spells.Spellweaving;
+using Server.Targeting;
 using Aggression = Server.Misc.Aggression;
 using RankDefinition = Server.Guilds.RankDefinition;
-using Server.Events.Halloween;
-
-#endregion
 
 namespace Server.Mobiles
 {
-
     #region Enums
     [Flags]
     public enum PlayerFlag
@@ -813,76 +809,66 @@ namespace Server.Mobiles
                 PacketHandlers.RegisterThrottler(0x02, MovementThrottle_Callback);
             }
 
-            #region Enchanced Client
-            EventSink.TargetedSkill += Targeted_Skill;
-            EventSink.EquipMacro += EquipMacro;
-            EventSink.UnequipMacro += UnequipMacro;
-            #endregion
-
             Timer.DelayCall(TimeSpan.Zero, CheckPets);
         }
 
-        #region Enhanced Client
-        private static void Targeted_Skill(TargetedSkillEventArgs e)
+        public static void TargetedSkillUse(Mobile from, IEntity target, int skillId)
         {
-            Mobile from = e.Mobile;
-            IEntity target = e.Target;
-
             if (from == null || target == null)
                 return;
 
             from.TargetLocked = true;
 
-            if (e.SkillID == (short)SkillName.Provocation)
+            if (skillId == (short)SkillName.Provocation)
             {
                 Provocation.DeferredSecondaryTarget = true;
-                InvokeTarget(e, from, target);
+                InvokeTarget(from, target, skillId);
                 Provocation.DeferredSecondaryTarget = false;
             }
 
-            else if (e.SkillID == (short)SkillName.AnimalTaming)
+            else if (skillId == (short)SkillName.AnimalTaming)
             {
                 AnimalTaming.DisableMessage = true;
                 AnimalTaming.DeferredTarget = false;
-                InvokeTarget(e, from, target);
+                InvokeTarget(from, target, skillId);
                 AnimalTaming.DeferredTarget = true;
                 AnimalTaming.DisableMessage = false;
 
             }
             else
             {
-                InvokeTarget(e, from, target);
+                InvokeTarget(from, target, skillId);
             }
 
 
             from.TargetLocked = false;
         }
 
-        private static void InvokeTarget(TargetedSkillEventArgs e, Mobile from, IEntity target)
+        private static void InvokeTarget(Mobile from, IEntity target, int skillId)
         {
-            if (from.UseSkill(e.SkillID))
+            if (from.UseSkill(skillId))
             {
                 from.Target?.Invoke(from, target);
             }
         }
 
-        public static void EquipMacro(EquipMacroEventArgs e)
+        public static void EquipMacro(Mobile m, List<Serial> list)
         {
-            if (e.Mobile is PlayerMobile pm && pm.Backpack != null && pm.Alive && e.List != null && e.List.Count > 0 && !pm.HasTrade)
+            if (m is PlayerMobile pm && pm.Backpack != null && pm.Alive && list != null && list.Count > 0 && !pm.HasTrade)
             {
                 if (pm.IsStaff() || Core.TickCount - pm.NextActionTime >= 0)
                 {
                     Container pack = pm.Backpack;
 
-                    for (var itemSerial = 0; itemSerial < e.List.Count; itemSerial++)
+                    for (int itemSerial = 0; itemSerial < list.Count; itemSerial++)
                     {
-                        var serial = e.List[itemSerial];
+                        Serial serial = list[itemSerial];
 
                         Item item = null;
 
-                        for (var index = 0; index < pack.Items.Count; index++)
+                        for (int index = 0; index < pack.Items.Count; index++)
                         {
-                            var i = pack.Items[index];
+                            Item i = pack.Items[index];
 
                             if (i.Serial == serial)
                             {
@@ -915,7 +901,7 @@ namespace Server.Mobiles
                         }
                     }
 
-                    pm.NextActionTime = Core.TickCount + ActionDelay * e.List.Count;
+                    pm.NextActionTime = Core.TickCount + ActionDelay * list.Count;
                 }
 	            else
 	            {
@@ -924,9 +910,9 @@ namespace Server.Mobiles
 	        }
         }
 
-        public static void UnequipMacro(UnequipMacroEventArgs e)
+        public static void UnequipMacro(Mobile m, List<Layer> layers)
         {
-            if (e.Mobile is PlayerMobile pm && pm.Backpack != null && pm.Alive && e.List != null && e.List.Count > 0 && !pm.HasTrade)
+            if (m is PlayerMobile pm && pm.Backpack != null && pm.Alive && layers != null && layers.Count > 0 && !pm.HasTrade)
             {
                 if (pm.IsStaff() || Core.TickCount - pm.NextActionTime >= 0)
                 {
@@ -934,11 +920,11 @@ namespace Server.Mobiles
 
                     List<Item> worn = new List<Item>(pm.Items);
 
-                    for (var index = 0; index < worn.Count; index++)
+                    for (int index = 0; index < worn.Count; index++)
                     {
                         Item item = worn[index];
 
-                        if (e.List.Contains((int) item.Layer))
+                        if (layers.Contains(item.Layer))
                         {
                             pack.TryDropItem(pm, item, false);
                         }
@@ -953,7 +939,6 @@ namespace Server.Mobiles
 	            }
 	        }
         }
-        #endregion
 
         private static void CheckPets()
         {
@@ -1150,8 +1135,8 @@ namespace Server.Mobiles
             m_LastGlobalLight = global;
             m_LastPersonalLight = personal;
 
-            ns.Send(GlobalLightLevel.Instantiate(global));
-            ns.Send(new PersonalLightLevel(this, personal));
+            ns.Send(GlobalLightLevelPacket.Instantiate(global));
+            ns.Send(new PersonalLightLevelPacket(this, personal));
         }
 
         public override bool SendSpeedControl(SpeedControlType type)
@@ -1326,6 +1311,8 @@ namespace Server.Mobiles
             {
                 Siege.OnLogin(this);
             }
+
+            ResendBuffs();
         }
 
         private bool m_NoDeltaRecursion;
@@ -4871,16 +4858,10 @@ namespace Server.Mobiles
 
         public static event PlayerPropertiesEventHandler PlayerProperties;
 
-        public class PlayerPropertiesEventArgs : EventArgs
+        public sealed class PlayerPropertiesEventArgs(PlayerMobile player, ObjectPropertyList list) : EventArgs
         {
-            public PlayerMobile Player;
-            public ObjectPropertyList PropertyList;
-
-            public PlayerPropertiesEventArgs(PlayerMobile player, ObjectPropertyList list)
-            {
-                Player = player;
-                PropertyList = list;
-            }
+            public PlayerMobile Player = player;
+            public ObjectPropertyList PropertyList = list;
         }
 
         public override void GetProperties(ObjectPropertyList list)
